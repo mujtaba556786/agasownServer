@@ -1,22 +1,35 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from odata.models import Product, Customer, Categories, Shipper, Order, OrderDetail
+from odata.models import Product, Customer, Categories, ProductImage, ProductVariant, NewsletterSubscription
 
 class ProductSerializers(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = '__all__'
-        
+
+class ProductImageSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = '__all__'
+
+
+class ProductVariantSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = ProductVariant
+        fields = '__all__'
+
+
+class NewsLetterSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = NewsletterSubscription
+        fields = '__all__'
 class CustomerSerializers(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(), required=False)
     username = serializers.CharField(max_length=100)
     email = serializers.EmailField()
     class Meta:
         model = Customer
-        fields = ['user', 'username', 'email', 'first_name', 'last_name', 'customer_class', 'room', 'building', 'address1', 'address2', 'city', 'state', 'postal_code',
-                 'country', 'phone', 'voice_mail', 'password', 'credit_card', 'credit_card_type_id', 'card_exp_month', 'card_exp_month', 'billing_address', 'billing_city',
-                 'billing_region', 'billing_postal_code', 'billing_country', 'ship_address', 'ship_city', 'ship_region', 'ship_postal_code', 'ship_country', 'date_entered', 
-                 ]
+        exclude = ('created_at', 'updated_at')
 
     def create(self, validated_data):
         username = validated_data.pop('username')
@@ -51,18 +64,4 @@ class CategorySerializers(serializers.ModelSerializer):
     class Meta:
         model = Categories
         fields = '__all__'
-
-class ShipperSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = Shipper
-        fields = '__all__'
-
-class OrderSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = Order
-        fields = '__all__'
-
-class OrderDetailSerializers(serializers.ModelSerializer):
-    class Meta:
-        model = OrderDetail
-        fields = '__all__'
+        
