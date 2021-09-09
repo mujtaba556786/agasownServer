@@ -203,7 +203,9 @@ JAZZMIN_SETTINGS = {
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'agasOwn/dist'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -289,3 +291,7 @@ CURRENT_PATH = os.path.abspath(os.path.dirname(__file__))
 MEDIA_ROOT = os.path.join(CURRENT_PATH, 'media').replace('\\','/')
 
 MEDIA_URL = '/media/'
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'agasOwn/dist')
+]
