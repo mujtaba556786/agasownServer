@@ -1,0 +1,22 @@
+<div style="padding: 20px; height: 100%; background-color: antiquewhite;">
+    {% if user.is_authenticated %}
+        <p>Welcome, {{ user.get_username }}. Thanks for logging in.</p>
+        <div style="margin-top: 8px;">
+
+            <a href="{% url 'logout' %}">
+
+                <button>Log out</button>
+            </a>
+        </div>
+    {% else %}
+        <div">
+
+            <a href="{% url 'login' %}">
+
+                <button>Log In</button>
+            </a>
+        </div>
+    {% endif %}
+
+
+</div>

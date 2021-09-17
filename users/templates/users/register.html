@@ -1,0 +1,21 @@
+{% load crispy_forms_tags %}
+<div style="padding: 20px; height: 100%; background-color: antiquewhite;">
+    <h2>Join Us Today</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+        
+        {{ form|crispy }}
+        <button style="margin-top: 8px;">Sign Up</button>
+        <small>Already have an account? <a href="{% url 'login' %}">Sign In</a></small>
+    </form>
+
+
+    {% if messages %}
+    {% for message in messages %}
+    <div style="background-color: green ; color: #ffffff; font-weight: 600; font-size: large; padding: 10px;">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>

@@ -1,0 +1,16 @@
+{% load crispy_forms_tags %}
+<div style="padding: 20px; height: 100%; background-color: antiquewhite;">
+    <h2>Login</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <div style="margin-top: 8px;">
+
+            <button>Login</button>
+            <small>Need an account? <a href="{% url 'register' %}">Sign Up</a></small>
+        </div>
+    </form>
+
+
+</div>

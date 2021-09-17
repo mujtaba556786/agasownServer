@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
+# from odata.models import Customer
 import os
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -31,6 +32,10 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'customers.apps.CustomersConfig',
+    'payments.apps.PaymentsConfig',
+    'crispy_forms',
+    'users.apps.UsersConfig',
     'jazzmin',
     # 'material',
     # 'material.admin',
@@ -46,7 +51,8 @@ INSTALLED_APPS = [
     'odata',
     'drf_yasg',
     'import_export',        
-    'corsheaders'
+    'corsheaders',
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -224,20 +230,20 @@ WSGI_APPLICATION = 'Project.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
 DATABASES = {
     'default': {
-        'ENGINE': 'djongo',
-        'NAME': 'ecommerce_db',
-        'HOST': '127.0.0.1',
-        'PORT': 27017,
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'djongo',
+#         'NAME': 'ecommerce_db',
+#         'HOST': '127.0.0.1',
+#         'PORT': 27017,
+#     }
+# }
 
 
 # Password validation
@@ -280,9 +286,19 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 REST_FRAMEWORK = {
-    'DEFAULT_RENDERER_CLASSES': [
+    'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
-    ]
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=15),
+    'ROTATE_REFRESH_TOKENS': True,
 }
 
 import os
@@ -291,7 +307,10 @@ CURRENT_PATH = os.path.abspath(os.path.dirname(__file__))
 MEDIA_ROOT = os.path.join(CURRENT_PATH, 'media').replace('\\','/')
 
 MEDIA_URL = '/media/'
-
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'agasOwn/dist')
 ]
+
+CRISPY_TEMPLATE_PACK = "bootstrap4"
+
+LOGIN_REDIRECT_URL = "welcome"

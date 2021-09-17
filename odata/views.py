@@ -1,5 +1,6 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
 from odata.models import (
     Payment,
@@ -34,6 +35,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     """This viewset is used for crud operations"""
 
     queryset = Product.objects.all()
+    permission_classes = [IsAuthenticated]
     serializer_class = ProductSerializers
     
     def get_serializer_context(self):
@@ -67,6 +69,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
     """This viewset is used for crud operations"""
 
     queryset = Customer.objects.all()
+    permission_classes = [IsAuthenticated]
     serializer_class = CustomerSerializers
 
 
@@ -74,8 +77,9 @@ class CategoryViewSet(viewsets.ModelViewSet):
     """This viewset is used for crud operations"""
 
     queryset = Categories.objects.all()
+    
     serializer_class = CategorySerializers
-
+    
 
 class PaymentViewset(viewsets.ModelViewSet):
     """

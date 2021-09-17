@@ -1,0 +1,299 @@
+<style>
+    * {
+    font-family: "Helvetica Neue", Helvetica;
+    font-size: 15px;
+    font-variant: normal;
+    padding: 0;
+    margin: 0;
+  }
+  
+  html {
+    height: 100%;
+  }
+  
+  body {
+    background: #E6EBF1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100%;
+  }
+  
+  form {
+    width: 480px;
+    margin: 20px 0;
+  }
+  
+  .group {
+    background: white;
+    box-shadow: 0 7px 14px 0 rgba(49, 49, 93, 0.10), 0 3px 6px 0 rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+  
+  label {
+    position: relative;
+    color: #8898AA;
+    font-weight: 300;
+    height: 40px;
+    line-height: 40px;
+    margin-left: 20px;
+    display: flex;
+    flex-direction: row;
+  }
+  
+  .group label:not(:last-child) {
+    border-bottom: 1px solid #F0F5FA;
+  }
+  
+  label > span {
+    width: 120px;
+    text-align: right;
+    margin-right: 30px;
+  }
+  
+  .field {
+    background: transparent;
+    font-weight: 300;
+    border: 0;
+    color: #31325F;
+    outline: none;
+    flex: 1;
+    padding-right: 10px;
+    padding-left: 10px;
+    cursor: text;
+  }
+  
+  .field::-webkit-input-placeholder {
+    color: #CFD7E0;
+  }
+  
+  .field::-moz-placeholder {
+    color: #CFD7E0;
+  }
+  
+  button {
+    float: left;
+    display: block;
+    background: #666EE8;
+    color: white;
+    box-shadow: 0 7px 14px 0 rgba(49, 49, 93, 0.10), 0 3px 6px 0 rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    border: 0;
+    margin-top: 20px;
+    font-size: 15px;
+    font-weight: 400;
+    width: 100%;
+    height: 40px;
+    line-height: 38px;
+    outline: none;
+  }
+  
+  button:focus {
+    background: #555ABF;
+  }
+  
+  button:active {
+    background: #43458B;
+  }
+  
+  .outcome {
+    float: left;
+    width: 100%;
+    padding-top: 8px;
+    min-height: 24px;
+    text-align: center;
+  }
+  
+  .success,
+  .error {
+    display: none;
+    font-size: 13px;
+  }
+  
+  .success.visible,
+  .error.visible {
+    display: inline;
+  }
+  
+  .error {
+    color: #E4584C;
+  }
+  
+  .success {
+    color: #666EE8;
+  }
+  
+  .success .token {
+    font-weight: 500;
+    font-size: 13px;
+  }
+  
+</style>
+
+<!-- Paypal -->
+
+<div id="paypal-button-container"></div>
+<script src="https://www.paypal.com/sdk/js?client-id=AV8IrFtLvYlbq2b7uja0y46Ulu4ULMsUkT41XoI1FTjenEhJYrVt2J-GsQkudvtCx_IX8bH-q48hE9TA&currency=USD"></script>
+<script>
+  // Render the PayPal button into #paypal-button-container
+
+  paypal.Buttons({
+
+      // Set up the transaction
+      createOrder: function(data, actions) {
+          return actions.order.create({
+              purchase_units: [{
+                  amount: {
+                      value: document.getElementById('amount').value
+                  }
+              }]
+          });
+      },
+
+      // Finalize the transaction
+      onApprove: function(data, actions) {
+          return actions.order.capture().then(function(orderData) {
+              // Successful capture! For demo purposes:
+              console.log('Capture result', orderData, JSON.stringify(orderData, null, 2));
+              var transaction = orderData.purchase_units[0].payments.captures[0];
+              alert('Transaction '+ transaction.status + ': ' + transaction.id + '\n\nSee console for all available details');
+
+              // Replace the above to show a success message within this page, e.g.
+              // const element = document.getElementById('paypal-button-container');
+              // element.innerHTML = '';
+              // element.innerHTML = '<h3>Thank you for your payment!</h3>';
+              // Or go to another URL:  actions.redirect('thank_you.html');
+          });
+      }
+
+
+  }).render('#paypal-button-container');
+</script>
+
+<div>
+<form action="{% url 'charge' %}" method="POST" style="padding: 10px">
+    {% csrf_token %}
+    <label class="group" style="
+        left: 30px;
+        position: absolute;
+        top: 40px;
+    ">
+      <span>Amount $</span>
+      <input id="amount" name="amount" class="field" placeholder="Enter Amount" />
+    </label>
+    <input type="hidden" name="token" />
+    <div class="group">
+        <label>
+          <span>Email</span>
+          <input id="email" name="email" type="email" class="field" placeholder="Enter Amount" />
+        </label>
+        
+          <label>
+            <span>Name on Card</span>
+            <input id="name" name="name" class="field" placeholder="Enter Name" />
+          </label>
+        <label>
+            <span>Card number</span>
+            <div id="card-number-element" class="field"></div>
+        </label>
+        <label>
+            <span>Expiry date</span>
+            <div id="card-expiry-element" class="field"></div>
+        </label>
+        <label>
+            <span>CVC</span>
+            <div id="card-cvc-element" class="field"></div>
+        </label>
+        <label>
+            <span>Postal code</span>
+            <input id="postal-code" name="postal_code" class="field" placeholder="Regular field placeholder" />
+        </label>
+    </div>
+    <button type="submit">Pay Now</button>
+    <div class="outcome">
+        <div class="error"></div>
+        <div class="success">
+            Success! Your Stripe token is <span class="token"></span>
+        </div>
+    </div>
+</form>
+</div>
+
+<script src="https://js.stripe.com/v3/"></script>
+
+<script>
+   var stripe = Stripe('pk_test_51JWasjC3vmDAEiznopkKsHMO9GFwWj0zkLQDt54iAsdqOMLRTcTR2o9nc2bwaHudVOtj7a1WLXTbKEnidhbUsG8600QKyOO2vy');
+var elements = stripe.elements();
+
+var style = {
+  base: {
+    iconColor: '#666EE8',
+    color: '#31325F',
+    lineHeight: '40px',
+    fontWeight: 300,
+    fontFamily: 'Helvetica Neue',
+    fontSize: '15px',
+
+    '::placeholder': {
+      color: '#CFD7E0',
+    },
+  },
+};
+
+var cardNumberElement = elements.create('cardNumber', {
+  style: style,
+  placeholder: 'Custom card number placeholder',
+});
+
+cardNumberElement.mount('#card-number-element');
+
+var cardExpiryElement = elements.create('cardExpiry', {
+  style: style,
+  placeholder: 'Custom expiry date placeholder',
+});
+cardExpiryElement.mount('#card-expiry-element');
+
+var cardCvcElement = elements.create('cardCvc', {
+  style: style,
+  placeholder: 'Custom CVC placeholder',
+});
+cardCvcElement.mount('#card-cvc-element');
+
+
+function setOutcome(result) {
+  var successElement = document.querySelector('.success');
+  var errorElement = document.querySelector('.error');
+  successElement.classList.remove('visible');
+  errorElement.classList.remove('visible');
+
+  if (result.token) {
+    successElement.querySelector('.token').textContent = result.token.id;
+    // successElement.classList.add('visible');
+
+    var form = document.querySelector('form');
+    form.querySelector('input[name="token"]').setAttribute('value', result.token.id);
+    form.submit();
+  } else if (result.error) {
+    errorElement.textContent = result.error.message;
+    errorElement.classList.add('visible');
+  }
+}
+
+cardNumberElement.on('change', function(event) {
+  setOutcome(event);
+});
+
+document.querySelector('form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var options = {
+    address_zip: document.getElementById('postal-code').value,
+    amount: document.getElementById('amount').value,
+    name: document.getElementById('name').value,
+    email: document.getElementById('email').value,
+  };
+  stripe.createToken(cardNumberElement, options).then(setOutcome);
+});
+
+
+</script>
