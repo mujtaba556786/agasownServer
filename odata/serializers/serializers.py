@@ -21,7 +21,7 @@ class ProductImageSerializers(serializers.ModelSerializer):
 
     def get_image_url(self, obj):
         request = self.context.get("request")
-        image_url = obj.image.url
+        image_url = obj.image.str
         return request.build_absolute_uri(image_url)
 
 
@@ -41,13 +41,9 @@ class ProductSerializers(serializers.ModelSerializer):
         Change in the response of api
         """
         rep = super(ProductSerializers, self).to_representation(instance)
-        product_image = ProductImage.objects.filter(product=instance).order_by("-id")
         product_variant = ProductVariant.objects.filter(
             parent_product=instance
-        ).order_by("-id")
-        rep["product_image"] = ProductImageSerializers(
-            product_image, many=True, context={"request": self.context.get("request")}
-        ).data
+        ).order_by("_id")     
         rep["product_variant"] = ProductVariantSerializers(
             product_variant, many=True
         ).data

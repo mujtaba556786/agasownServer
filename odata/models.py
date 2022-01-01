@@ -148,7 +148,7 @@ class Product(models.Model):
     color = models.CharField(max_length=100,null=True,blank=True)
     discount = models.DecimalField(decimal_places=2, max_digits=10, verbose_name="Discount %")
     product_available = models.BooleanField(default=False)        
-    picture = models.URLField(null=True,blank=True)
+    picture = models.CharField(max_length=100, null=True,blank=True)
     ranking = models.CharField(max_length=15,choices=RANKING, null=True,blank=True)
     description = models.TextField(max_length=200, null=True,blank=True)
     description_de = models.TextField(max_length=200, blank=True, null=True)
@@ -176,7 +176,7 @@ class ProductImage(models.Model):
     _id = models.ObjectIdField(primary_key=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     image_order = models.IntegerField()
-    image = models.URLField(null=True,blank=True)
+    image = models.CharField(max_length=100, null=True,blank=True)
     created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
     
