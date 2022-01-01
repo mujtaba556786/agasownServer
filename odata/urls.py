@@ -6,14 +6,28 @@ from django.urls import path, include
 
 from rest_framework import routers
 from rest_framework.routers import SimpleRouter, Route
-from odata.views import (
+from odata.views.apis import (
     ProductViewSet,
     CustomerViewSet,
     CategoryViewSet,
-    PaymentViewset,    
+    PaymentViewset,
     NewsLetterViewSet,
 )
-
+from odata.views.accounts import (
+    LoginViewSet,
+    SignupViewSet,
+    LogoutViewSet,
+    UserForgotPasswordViewSet,
+    VerifyUserForgotPasswordViewSet,
+    ResetPasswordViewSet,
+    ResetPasswordViewSet,
+)
+from odata.views.pg_stripe import (
+    CreateCheckoutSession,
+    StipeCheckoutSession,
+    StripeWebHookView,
+    success,
+)
 
 viewset_dict = {
     "get": "list",
@@ -79,6 +93,18 @@ router.register(r"payments", PaymentViewset),
 router.register(r"newsletter", NewsLetterViewSet),
 router.register(r"customers", CustomerViewSet),
 router.register(r"category", CategoryViewSet),
+router.register(r"login", LoginViewSet, basename="login")
+router.register(r"logout", LogoutViewSet, basename="logout")
+router.register(r"sign-up", SignupViewSet, basename="sign-up")
+router.register(
+    r"forgot-password", UserForgotPasswordViewSet, basename="forgot-password"
+)
+router.register(
+    r"verify-forgot-password",
+    VerifyUserForgotPasswordViewSet,
+    basename="verify-forgot-password",
+)
+router.register(r"reset-password", ResetPasswordViewSet, basename="reset-password")
 urlpatterns = [
     # path("api/", include(router.urls)),
     path(
@@ -88,4 +114,8 @@ urlpatterns = [
         name="django.contrib.sitemaps.views.sitemap",
     ),
     path("", include(router.urls)),
+    path("stripe/", StipeCheckoutSession.as_view()),
+    path("stripe/create-checkout", CreateCheckoutSession.as_view()),
+    path("stripe/webhook", StripeWebHookView.as_view()),
+    path("stripe/success", success),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
