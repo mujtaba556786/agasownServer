@@ -22,7 +22,7 @@ admin.site.disable_action('delete_selected')
 categories = Categories.objects.all()
 categories_choice = [('', '-----')]
 if categories:
-    categories_choice = [(x._id, x.category_name) for x in categories]
+    categories_choice = [('', '-----')] + [(x._id, x.category_name) for x in categories]
 
 products = Product.objects.all()
 products_choice = [('', '-----')]
