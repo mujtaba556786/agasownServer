@@ -19,17 +19,12 @@ from django.utils.encoding import force_text
 
 admin.site.disable_action('delete_selected')
 # Register your models here.
-categories = Categories.objects.all()
-categories_choice = [('', '-----')]
-if categories:
-    categories_choice = [('', '-----')] + [(x._id, x.category_name) for x in categories]
-
-products = Product.objects.all()
-products_choice = [('', '-----')]
-if products:
-    products_choice = [(x._id, x.product_name) for x in products]
     
 class ProductModelForm(forms.ModelForm):
+    categories = Categories.objects.all()
+    categories_choice = [('', '-----')]
+    if categories:
+        categories_choice = [(None, '-----')]+[(x._id, x.category_name) for x in categories]
     category = forms.ChoiceField(choices=categories_choice)
     class Meta:
         model = Product
@@ -43,8 +38,56 @@ class ProductModelForm(forms.ModelForm):
     #     raise forms.ValidationError("TEST EXCEPTION!")    
 
 
+class ProductImageForm(forms.ModelForm):
+    products = Product.objects.all()
+    products_choice = [('', '-----')]
+    if products:
+        products_choice += [(x._id, x.product_name) for x in products]
+    _id = forms.CharField(max_length=2048)
+    
+    def __init__(self, *args, **kwargs):
+        initial = kwargs.pop('initial', {})
+        # add a default rating if one hasn't been passed in
+        # initial['product'] = str(initial.get('product', 0))
+        if kwargs.get('instance'):
+            initial['_id'] = str(str(kwargs.get('instance')._id ))
+            kwargs['initial'] = initial
+        super(ProductImageForm, self).__init__(
+            *args, **kwargs
+        )
+    class Meta:
+        model = ProductImage
+        fields = "__all__"
+
+    def clean(self):
+        cleaned_data = self.cleaned_data
+        # cleaned_data["_id"] = ObjectId(cleaned_data["_id"])
+        # if cleaned_data.get('product'):
+        #     product = Product.objects.get(pk=ObjectId(cleaned_data['product']))
+        #     cleaned_data['product'] = product
+
+        return cleaned_data
+
+
+from django.forms.models import BaseInlineFormSet
+class CompositionElementFormSet(BaseInlineFormSet):
+    '''
+    Validate formset data here
+    '''
+    def clean(self):
+        super(CompositionElementFormSet, self).clean()
+
+        percent = 0
+        for form in self.forms:
+            if form._errors not in list(form.fields.keys()):
+                form._errors = {}
+            if not hasattr(form, 'cleaned_data'):
+                continue            
+
+
 class ProductModelInline(admin.TabularInline):
-    model = ProductImage
+    model = ProductImage    
+    formset = CompositionElementFormSet
     readonly_fields = ('image_preview',)
 
     def image_preview(self, obj):
@@ -55,17 +98,13 @@ class ProductModelInline(admin.TabularInline):
             return '(No image)'
 
     image_preview.short_description = 'Preview'
-    
-    def is_valid(self):
-        log.info(force_text(self.errors))
-        return super(ProductModelForm, self).is_valid()
 
 
 @admin.register(Product)
 class ProductAdmin(ImportExportModelAdmin, admin.ModelAdmin):
     icon_name = 'store'
     resource_class = ProductResources
-    # inlines= [ProductModelInline]
+    inlines= [ProductModelInline]
     list_display = ('product_name','quantity','price', 'msrp','image_tag','created_at', 'updated_at')
     form = ProductModelForm
     list_per_page = 15
@@ -96,13 +135,23 @@ class ProductAdmin(ImportExportModelAdmin, admin.ModelAdmin):
                     except :
                         pass
         return format_html(image_str)
-        
+    
+    def save_formset(self, request, form, formset, change):
+        for inline_form in formset.forms:
+            if inline_form.has_changed():
+                inline_form.instance.user = request.user
+        super().save_formset(request, form, formset, change)
+
     def save_model(self, request, obj, form, change):
         super(ProductAdmin, self).save_model(request, obj, form, change)
 
 
 class CategoryForm(forms.ModelForm):
-    parent = forms.ChoiceField(choices=categories_choice)
+    categories = Categories.objects.all()
+    categories_choice = [('', '-----')]
+    if categories:
+        categories_choice = [(None, '-----')]+[(x._id, x.category_name) for x in categories]
+    parent = forms.ChoiceField(choices=categories_choice, required=False)
     class Meta:
         model = Categories
         fields = "__all__"
@@ -112,6 +161,8 @@ class CategoryForm(forms.ModelForm):
         if cleaned_data.get('parent'):
             product = Categories.objects.get(pk=ObjectId(cleaned_data['parent']))
             cleaned_data['parent'] = product
+        else:
+            cleaned_data['parent'] = None
 
         return cleaned_data
 
@@ -175,41 +226,13 @@ class CustomerAdmin(admin.ModelAdmin):
             query.delete()
 
     make_deleted.short_description ='Delete selected customer'
-    
-
-class ProductImageForm(forms.ModelForm):
-    product = forms.ChoiceField(choices=products_choice)
-    class Meta:
-        model = ProductImage
-        fields = "__all__"
-
-    def clean(self):
-        cleaned_data = self.cleaned_data
-        if cleaned_data.get('product'):
-            product = Product.objects.get(pk=ObjectId(cleaned_data['product']))
-            cleaned_data['product'] = product
-
-        return cleaned_data
-
-
-@admin.register(ProductImage)
-class ProductImageAdmin(admin.ModelAdmin):
-    icon_name = 'child_friendly'
-    list_per_page = 15
-    search_fields = ('parent_product__title',)
-    form = ProductImageForm
-    actions = ['make_deleted']
-    
-    def make_deleted(modeladmin, request, queryset):
-        obj_ids = [ObjectId(i) for i in request.POST.getlist('_selected_action')]
-        for i in obj_ids:
-            query = ProductImage.objects.get(pk=i)
-            query.delete()
-
-    make_deleted.short_description ='Delete selected product variant'
 
 
 class ProductVariantForm(forms.ModelForm):
+    products = Product.objects.all()
+    products_choice = [('', '-----')]
+    if products:
+        products_choice += [(x._id, x.product_name) for x in products]
     parent_product = forms.ChoiceField(choices=products_choice)
     class Meta:
         model = ProductVariant
@@ -228,7 +251,7 @@ class ProductVariantForm(forms.ModelForm):
 class ProductVariantAdmin(admin.ModelAdmin):
     icon_name = 'child_friendly'
     list_per_page = 15
-    search_fields = ('parent_product__title',)
+    search_fields = ('parent_product__product_name',)
     form = ProductVariantForm
     actions = ['make_deleted']
     
@@ -239,7 +262,6 @@ class ProductVariantAdmin(admin.ModelAdmin):
             query.delete()
 
     make_deleted.short_description ='Delete selected product variant'
-
 
 
 @admin.register(NewsletterSubscription)
@@ -256,6 +278,7 @@ class NewsletterAdmin(admin.ModelAdmin):
             query.delete()
 
     make_deleted.short_description ='Delete selected NewsLetter'
+
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
@@ -276,3 +299,26 @@ class UserForgotPasswordAdmin(admin.ModelAdmin):
 # UnRegister your model.
 # admin.site.unregister(User)
 # admin.site.unregister(Group)
+
+# @admin.register(ProductImage)
+# class ProductImageAdmin(admin.ModelAdmin):
+#     icon_name = 'child_friendly'
+#     list_per_page = 15
+#     search_fields = ('product__product_name',)
+#     list_display = ("product", "image_tag")
+#     form = ProductImageForm
+#     actions = ['make_deleted']
+    
+#     def image_tag(self,obj):
+#         image_str = ''
+#         if obj.image:
+#             image_str = '<img src="{0}" style="width: 45px; height:45px;" />'.format(obj.image)
+
+#         return format_html(image_str)
+#     def make_deleted(modeladmin, request, queryset):
+#         obj_ids = [ObjectId(i) for i in request.POST.getlist('_selected_action')]
+#         for i in obj_ids:
+#             query = ProductImage.objects.get(pk=i)
+#             query.delete()
+
+#     make_deleted.short_description ='Delete selected product variant'
