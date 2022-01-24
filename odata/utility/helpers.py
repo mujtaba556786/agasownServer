@@ -116,7 +116,7 @@ def logout(user_id, access_token):
     """
     try:        
         user = USER.objects.get(pk=user_id)        
-        user.oauth2_provider_accesstoken.filter(token=access_token).delete()        
+        RefreshToken.objects.filter(user_id=user).delete()       
     except USER.DoesNotExist:
         pass
 
