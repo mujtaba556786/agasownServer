@@ -25,7 +25,7 @@ from odata.views.accounts import (
 from odata.views.pg_stripe import (
     CreateCheckoutSession,
     StipeCheckoutSession,
-    StripeWebHookView,
+    # StripeWebHookView,
     success,
 )
 
@@ -116,6 +116,6 @@ urlpatterns = [
     path("", include(router.urls)),
     path("stripe/", StipeCheckoutSession.as_view()),
     path("stripe/create-checkout", CreateCheckoutSession.as_view()),
-    path("stripe/webhook", StripeWebHookView.as_view()),
+    # path("stripe/webhook", StripeWebHookView.as_view()),
     path("stripe/success", success),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
