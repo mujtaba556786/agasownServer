@@ -8,7 +8,7 @@ import json
 from webbrowser import get
 # from responses import Response
 
-# Third Party import
+# # Third Party import
 import stripe
 from django.conf import settings
 from rest_framework.views import APIView
@@ -58,6 +58,7 @@ class StripeCard(APIView):
         exp_month = data.get("exp_month")
         exp_year = data.get("exp_year")
         cvc = data.get("cvc")
+        # descript = data.get("descript")
 
         card = {
             "number": card_number,
@@ -78,12 +79,14 @@ class StripeCard(APIView):
 
             intent_create = stripe.PaymentIntent.create(
                 customer=create_customer['id'],
+                # description = descript,
                 description=data.get(
                     "description", "Payment Intent Default Description"),
                 # shipping={
                 #     "name": data.get("shipping_name", create_customer["name"]),
                 #     "address": data.get("shipping_address", create_customer["address"])
                 # },
+                
                 amount=data.get("amount"),
                 currency=data.get("currency"),
                 payment_method_types=["card"],

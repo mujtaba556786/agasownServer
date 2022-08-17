@@ -25,8 +25,10 @@ from odata.views.accounts import (
 from odata.views.pg_stripe import (
     CreateCheckoutSession,
     StipeCheckoutSession,
+    StripeCard,
     # StripeWebHookView,
     success,
+    
 )
 
 viewset_dict = {
@@ -114,7 +116,8 @@ urlpatterns = [
         name="django.contrib.sitemaps.views.sitemap",
     ),
     path("", include(router.urls)),
-    path("stripe/", StipeCheckoutSession.as_view()),
+    path("stripe/", StripeCard.as_view()),
+    path("stripe/check-out", StipeCheckoutSession.as_view()),
     path("stripe/create-checkout", CreateCheckoutSession.as_view()),
     # path("stripe/webhook", StripeWebHookView.as_view()),
     path("stripe/success", success),
