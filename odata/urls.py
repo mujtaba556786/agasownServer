@@ -31,6 +31,11 @@ from odata.views.pg_stripe import (
     
 )
 
+from odata.views.paypal import (
+    Paypal
+
+)
+
 viewset_dict = {
     "get": "list",
     "post": "create",
@@ -121,4 +126,5 @@ urlpatterns = [
     path("stripe/create-checkout", CreateCheckoutSession.as_view()),
     # path("stripe/webhook", StripeWebHookView.as_view()),
     path("stripe/success", success),
+    path("paypal/", Paypal.as_view()),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
