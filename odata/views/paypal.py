@@ -1,5 +1,5 @@
 from rest_framework.views import APIView
-from django.http import HttpResponse
+from django.http import HttpResponse,JsonResponse
 import paypalrestsdk
 
 # import logging
@@ -19,7 +19,7 @@ class Paypal(APIView):
         payment = paypalrestsdk.Payment.find(payment_id)
 
         if payment.execute({"payer_id": payer_id}):
-            return HttpResponse(f"Payment execute successfully for Payment ID: {payment.id} ")
+            return JsonResponse({"payment_id": payment.id})
             # payment_history = paypalrestsdk.Payment.all({"count": 10})
             # print(payment_history)
 
@@ -57,6 +57,6 @@ class Paypal(APIView):
             for link in payment.links:
                 if link.rel == "approval_url":
                     approval_url = str(link.href)
-                    return HttpResponse(f"Payment Approval Link: {approval_url}")
+                    return HttpResponse(approval_url)
         else:
             return HttpResponse(payment.error)

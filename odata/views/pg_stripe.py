@@ -48,6 +48,7 @@ def create_payment_method(card_data):
     )
     return payment_method
 
+
 # API for credit_cards payment
 
 
@@ -86,7 +87,7 @@ class StripeCard(APIView):
                 #     "name": data.get("shipping_name", create_customer["name"]),
                 #     "address": data.get("shipping_address", create_customer["address"])
                 # },
-                
+
                 amount=data.get("amount"),
                 currency=data.get("currency"),
                 payment_method_types=["card"],
@@ -132,7 +133,6 @@ class StripeCard(APIView):
         retrieve = stripe.PaymentIntent.retrieve(
             intent_create['id'],
         )
-        
 
         return HttpResponse("payment Successful")
 
@@ -141,9 +141,8 @@ class StripSofort(APIView):
     def get(self, request):
         payment_id = request.GET["payment_intent"]
         customer_id = request.GET["payment_intent_client_secret"]
-        # print(customer_id)
 
-        return HttpResponse(f"Payment successfull for {payment_id} of Customer {customer_id}")
+        return JsonResponse({"payment_id": payment_id})
 
     def post(self, request):
         data = request.POST.dict()
@@ -191,7 +190,6 @@ class StripSofort(APIView):
                 payment_method=payment_method["id"],
                 payment_method_types=["sofort"],
             )
-
 
             confirm_payment = stripe.PaymentIntent.confirm(
                 payment_intent["id"],
@@ -259,7 +257,7 @@ class CreateCheckoutSession(APIView):
                         i = i + 1
             checkout_session = stripe.checkout.Session.create(
                 success_url=domain_url
-                + "stripe/success?session_id={CHECKOUT_SESSION_ID}",
+                            + "stripe/success?session_id={CHECKOUT_SESSION_ID}",
                 cancel_url=domain_url + "stripe/cancelled",
                 payment_method_types=["card", "sofort"],
                 mode="payment",
@@ -268,6 +266,7 @@ class CreateCheckoutSession(APIView):
             return response.Response({"sessionId": checkout_session["id"]})
         except Exception as e:
             return response.Response(error=str(e), status=status.HTTP_403_FORBIDDEN)
+
 
 # class StripeWebhookView(APIView):
 #     def post(self,request):
