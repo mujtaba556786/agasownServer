@@ -1,14 +1,16 @@
 from rest_framework.views import APIView
-from django.http import HttpResponse,JsonResponse
+from django.http import HttpResponse, JsonResponse
 import paypalrestsdk
+from django.core.mail import send_mail
+from Project.settings import EMAIL_HOST_USER
 
 # import logging
-# from paypal_intigration.paypal_intigration.settings import PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET
+from Project.settings import PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET
 
 paypalrestsdk.configure({
     "mode": "sandbox",
-    "client_id": "Aa176Af9rSh-7gDZELoNnJoGTjOpXfo0ECrNw6HjD4633ArdVOw59D4rafyywX887C-N9k_albOUlBiE",
-    "client_secret": "EGyQfM4tLnJTszmQcnIF185Br3YUUt2VEyaj9yQrLZeiLqwKUxB5wWeHomsrwSnqJEahIC1TuMbggpse"
+    "client_id": PAYPAL_CLIENT_ID,
+    "client_secret": PAYPAL_CLIENT_SECRET
 })
 
 
@@ -19,12 +21,25 @@ class Paypal(APIView):
         payment = paypalrestsdk.Payment.find(payment_id)
 
         if payment.execute({"payer_id": payer_id}):
-            return JsonResponse({"payment_id": payment.id})
-            # payment_history = paypalrestsdk.Payment.all({"count": 10})
-            # print(payment_history)
+            product_name = payment.transactions[0].item_list.items[0].name
+            price = str(payment.transactions[0].item_list.items[0].price)
+            quantity = str(payment.transactions[0].item_list.items[0].quantity)
+            total_amount = str(payment.transactions[0].amount.total)
+            email = payment.payer.payer_info.email
+
+            email_body = "Hello ,\n Here is your Order Summary: \n Order Details\n Product Name:" + product_name + "\n Product Quantity:" + quantity + "\n Product Price:" + price + "\n Total Amount to Pay:" + total_amount + "\n Mode of payment: PayPal Payment Gateway \n Your order will be delivered within 3 working days.\n You will receive an email shortly after it's dispatched.\n Best wishes,\n AgasOwn Marketing Team \n "
+            send_mail(
+                subject='Payment Successful for PayPal',
+                message=email_body,
+                from_email=EMAIL_HOST_USER,
+                recipient_list=[email],
+                fail_silently=False)
+
+            return JsonResponse({"message": "Mail has been send to your e-mail for payment details"},
+                                status=200)
 
         else:
-            return HttpResponse(payment.error)
+            return JsonResponse({"error": payment.error}, status=500)
 
     def post(self, request):
         data = request.POST.dict()
@@ -38,7 +53,7 @@ class Paypal(APIView):
             "payer": {
                 "payment_method": "paypal"},
             "redirect_urls": {
-                "return_url": "http://localhost:8000/paypal",
+                "return_url": "http://localhost:8000/paypal/",
                 "cancel_url": "http://localhost:8000/"},
             "transactions": [{
                 "item_list": {
@@ -57,6 +72,6 @@ class Paypal(APIView):
             for link in payment.links:
                 if link.rel == "approval_url":
                     approval_url = str(link.href)
-                    return HttpResponse(approval_url)
+                    return HttpResponse({approval_url})
         else:
-            return HttpResponse(payment.error)
+            return JsonResponse({"error": payment.error}, status=400)

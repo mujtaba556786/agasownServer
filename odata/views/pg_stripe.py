@@ -11,6 +11,7 @@ from webbrowser import get
 # # Third Party import
 import stripe
 from django.conf import settings
+from django.core.mail import send_mail
 from rest_framework.views import APIView
 from rest_framework import status, response
 from django.views.generic import TemplateView
@@ -22,7 +23,8 @@ from django.views.decorators.csrf import csrf_exempt
 
 # local import
 from odata.models import Product, Payment, Customer
-from Project.settings import STRIPE_SECRET_KEY, STRIPE_PUBLISH_KEY, DOMAIN_URL
+from Project.settings import STRIPE_SECRET_KEY, STRIPE_PUBLISH_KEY, DOMAIN_URL,EMAIL_HOST_USER
+
 
 stripe.api_key = STRIPE_SECRET_KEY
 
@@ -140,9 +142,24 @@ class StripeCard(APIView):
 class StripSofort(APIView):
     def get(self, request):
         payment_id = request.GET["payment_intent"]
-        customer_id = request.GET["payment_intent_client_secret"]
+        retrieve_customer = stripe.PaymentIntent.retrieve(payment_id)
+        print(retrieve_customer)
+        total_amount = str(retrieve_customer.amount)
+        currency = str(retrieve_customer.currency)
+        customer_id = retrieve_customer.customer
+        cus_detials = stripe.Customer.retrieve(customer_id)
+        cus_name = cus_detials.name
+        customer_email = cus_detials.email
+        email_body = "Hello " + cus_name + "\n Thank you for making the payment \n We have received your payment of amount "+ currency + total_amount + "\n Mode of payment: Bank Transfer \nYour order will be delivered within 3 working days.\n You will receive an email shortly after it's dispatched.\n Best wishes,\n AgasOwn Marketing Team \n "
 
-        return JsonResponse({"payment_id": payment_id})
+        send_mail(
+            subject='Agas Own Successful Payment',
+            message=email_body,
+            from_email=EMAIL_HOST_USER,
+            recipient_list=[customer_email],
+            fail_silently=False)
+        return JsonResponse({"message": "Payment Successful"},
+                            status=200)
 
     def post(self, request):
         data = request.POST.dict()
