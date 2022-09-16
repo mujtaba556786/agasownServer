@@ -1,4 +1,5 @@
-from rest_framework import viewsets, status
+from django.http import HttpResponse
+from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -23,10 +24,11 @@ from odata.serializers.serializers import (
     NewsLetterSerializers,
 )
 
+
 # Create your views here.
 class ProductViewSet(viewsets.ModelViewSet):
     """This viewset is used for crud operations"""
-    
+
     model = Product
     queryset = Product.objects.all()
     serializer_class = ProductSerializers
@@ -80,9 +82,9 @@ class ProductImageViewSet(viewsets.ModelViewSet):
     model = ProductImage
     queryset = ProductImage.objects.all()
     serializer_class = ProductImageSerializers
-    
+
     def get_object(self):
-        return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))    
+        return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
 
 
 class ProductVariantViewSet(viewsets.ModelViewSet):
@@ -112,8 +114,8 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializers
-    permission_classes = [IsAuthenticated]
-    
+    # permission_classes = [IsAuthenticated]
+
     def get_object(self):
         return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
 
@@ -139,3 +141,23 @@ class PaymentViewset(viewsets.ModelViewSet):
 
     def get_object(self):
         return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
+
+
+class Wishlist(generics.GenericAPIView):
+    def post(self, request):
+        customer_id = request.data["customer_id"]
+        product_id = request.data["product_id"]
+        print(customer_id)
+        print(product_id)
+        # customer =
+        if Customer.objects.filter(_id=customer_id):
+            customer = Customer.objects.get(_id=customer_id)
+            print(customer.first_name)
+            product_id = Product.objects.get(_id=product_id)
+            customer.wishlist = product_id
+            Customer(wishlist=product_id)
+            Customer.save()
+
+        else:
+            return HttpResponse("Else", 500)
+        return HttpResponse("success", 200)
