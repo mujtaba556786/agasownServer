@@ -144,19 +144,29 @@ class PaymentViewset(viewsets.ModelViewSet):
 
 
 class Wishlist(generics.GenericAPIView):
-    def post(self, request):
+    def patch(self, request):
         customer_id = request.data["customer_id"]
         product_id = request.data["product_id"]
         print(customer_id)
         print(product_id)
-        # customer =
-        if Customer.objects.filter(_id=customer_id):
-            customer = Customer.objects.get(_id=customer_id)
+
+        cus_objInstance = ObjectId(customer_id)
+        product_objInstance = ObjectId(product_id)
+
+        if Customer.objects.filter(_id=cus_objInstance):
+            customer = Customer.objects.get(_id=cus_objInstance)
             print(customer.first_name)
-            product_id = Product.objects.get(_id=product_id)
-            customer.wishlist = product_id
-            Customer(wishlist=product_id)
-            Customer.save()
+            if Product.objects.filter(_id=product_objInstance):
+                product = Product.objects.get(_id=product_objInstance)
+                print(product._id)
+                print(type(customer.wishlist))
+                # customer.wishlist.append(product._id)
+                customer.wishlist = product._id
+                print("*** reached here")
+                # customer.wishlist = [product._id]
+                # print(customer.wishlist)
+                # Customer(wishlist=product)
+                customer.save()
 
         else:
             return HttpResponse("Else", 500)
