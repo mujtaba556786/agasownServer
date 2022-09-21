@@ -56,8 +56,6 @@ class Categories(models.Model):
     
     class Meta:
         db_table = 'odata_category'
-    
-
 
 class Customer(models.Model):
     """This model is used for customer"""    
@@ -72,7 +70,7 @@ class Customer(models.Model):
     postal_code = models.IntegerField(null=True,blank=True)
     country = models.CharField(max_length=100,null=True,blank=True)
     phone = models.CharField(max_length=10,null=True,blank=True)
-    # password = models.CharField(max_length=100)
+    password = models.TextField(max_length=100,null=True)
     salutation = models.CharField(max_length=100,null=True,blank=True)
     credit_card = models.CharField(max_length=15, null=True,blank=True)
     credit_card_type_id = models.CharField(max_length=100)
@@ -88,7 +86,8 @@ class Customer(models.Model):
     ship_country = models.CharField(max_length=100, null=True,blank=True)
     marketing_code = models.CharField(max_length=100, null=True, blank=True)
     source = models.CharField(max_length=100, null=True, blank=True)
-    wishlist = ArrayField(models.CharField(max_length=120), null=True) #added latest
+    # wishlist = ArrayField(models.CharField(max_length=120), null=True) #added latest
+    wishlist = models.TextField(null=True)
     medium = models.CharField(max_length=100, null=True, blank=True)
     gcustid = models.CharField(max_length=512, null=True, blank=True)
     gclid = models.CharField(max_length=1024, null=True, blank=True)

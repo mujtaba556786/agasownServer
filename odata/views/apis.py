@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -114,6 +114,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializers
+
     # permission_classes = [IsAuthenticated]
 
     def get_object(self):
@@ -147,27 +148,53 @@ class Wishlist(generics.GenericAPIView):
     def patch(self, request):
         customer_id = request.data["customer_id"]
         product_id = request.data["product_id"]
-        print(customer_id)
-        print(product_id)
+        cus_objInstance = ObjectId(customer_id)
+        product_objInstance = ObjectId(product_id)
+        if Customer.objects.filter(_id=cus_objInstance):
+            customer = Customer.objects.get(_id=cus_objInstance)
+            if Product.objects.filter(_id=product_objInstance):
+                wishlist = customer.wishlist
+                wishlist = f"{wishlist},{product_id}" if wishlist else f"{product_id}"
+                customer.wishlist = wishlist
+                customer.save()
+            else:
+                return JsonResponse({"message": "Product doesn't exists"},
+                                    status=400)
+        else:
+            return JsonResponse({"message": "Customer doesn't exists"},
+                                status=400)
+        return JsonResponse({"message": "Added Successfully"},
+                            status=200)
+
+
+class DeleteWishlist(generics.GenericAPIView):
+    def delete(self, request):
+        customer_id = request.data["customer_id"]
+        product_id = request.data["product_id"]
 
         cus_objInstance = ObjectId(customer_id)
         product_objInstance = ObjectId(product_id)
 
         if Customer.objects.filter(_id=cus_objInstance):
             customer = Customer.objects.get(_id=cus_objInstance)
-            print(customer.first_name)
             if Product.objects.filter(_id=product_objInstance):
-                product = Product.objects.get(_id=product_objInstance)
-                print(product._id)
-                print(type(customer.wishlist))
-                # customer.wishlist.append(product._id)
-                customer.wishlist = product._id
-                print("*** reached here")
-                # customer.wishlist = [product._id]
-                # print(customer.wishlist)
-                # Customer(wishlist=product)
-                customer.save()
-
+                if customer.wishlist:
+                    wishlist = (customer.wishlist).split(',')
+                    wishlist.remove(product_id)
+                    cust_wishlist = ""
+                    if wishlist:
+                        for data in wishlist:
+                            cust_wishlist = f"{cust_wishlist},{data}" if cust_wishlist else f"{data}"
+                else:
+                    return JsonResponse({"message": "Product_id doesn't exists in wishlist"},
+                                        status=400)
+            else:
+                return JsonResponse({"message": "Product_id doesn't exists"},
+                                    status=400)
         else:
-            return HttpResponse("Else", 500)
-        return HttpResponse("success", 200)
+            return JsonResponse({"message": "Customer doesn't exists"},
+                                status=400)
+        customer.wishlist = cust_wishlist
+        customer.save()
+        return JsonResponse({"message": "Deleted Successfully"},
+                            status=200)
