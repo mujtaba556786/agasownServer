@@ -25,6 +25,10 @@ from odata.utility.helpers import (
     validate_password,
     validate_name,
 )
+from django.core.mail import EmailMessage
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 
 class LoginSerializer(serializers.ModelSerializer, ApiResponse):

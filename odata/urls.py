@@ -8,7 +8,7 @@ from django.urls import path, include
 
 from rest_framework import routers
 from rest_framework.routers import SimpleRouter, Route
-from .views.apis import (
+from odata.views.apis import (
     ProductViewSet,
     CustomerViewSet,
     CategoryViewSet,
