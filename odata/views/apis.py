@@ -153,16 +153,22 @@ class Wishlist(generics.GenericAPIView):
         if Customer.objects.filter(_id=cus_objInstance):
             customer = Customer.objects.get(_id=cus_objInstance)
             if Product.objects.filter(_id=product_objInstance):
-                wishlist = customer.wishlist
-                wishlist = f"{wishlist},{product_id}" if wishlist else f"{product_id}"
-                customer.wishlist = wishlist
-                customer.save()
+                customer_wishlist = customer.wishlist.split(",")
+                if product_id in customer_wishlist:
+                    return JsonResponse({"message": "Product already exists"},
+                                        status=400)
+                else:
+                    wishlist = customer.wishlist
+                    wishlist = f"{wishlist},{product_id}" if wishlist else f"{product_id}"
+                    customer.wishlist = wishlist
+                    customer.save()
             else:
                 return JsonResponse({"message": "Product doesn't exists"},
                                     status=400)
         else:
             return JsonResponse({"message": "Customer doesn't exists"},
                                 status=400)
+
         return JsonResponse({"message": "Added Successfully"},
                             status=200)
 
@@ -179,22 +185,21 @@ class DeleteWishlist(generics.GenericAPIView):
             customer = Customer.objects.get(_id=cus_objInstance)
             if Product.objects.filter(_id=product_objInstance):
                 if customer.wishlist:
-                    wishlist = (customer.wishlist).split(',')
-                    wishlist.remove(product_id)
-                    cust_wishlist = ""
-                    if wishlist:
-                        for data in wishlist:
-                            cust_wishlist = f"{cust_wishlist},{data}" if cust_wishlist else f"{data}"
+                    customer_wishlist = customer.wishlist.split(',')
+                    if product_id in customer_wishlist:
+                        customer_wishlist.remove(product_id)
+                        customer.wishlist = ",".join(customer_wishlist)
+                    else:
+                        return JsonResponse({"message": "Product_id doesn't exists in wishlist"},
+                                            status=400)
                 else:
-                    return JsonResponse({"message": "Product_id doesn't exists in wishlist"},
-                                        status=400)
+                    return JsonResponse({"message": "Wishlist is empty"}, status=200)
             else:
                 return JsonResponse({"message": "Product_id doesn't exists"},
                                     status=400)
         else:
             return JsonResponse({"message": "Customer doesn't exists"},
                                 status=400)
-        customer.wishlist = cust_wishlist
         customer.save()
         return JsonResponse({"message": "Deleted Successfully"},
                             status=200)
