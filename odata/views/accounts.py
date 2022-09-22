@@ -2,10 +2,9 @@
 
 # third party import
 from django.contrib.auth.models import User
-from rest_framework import mixins, generics
+from rest_framework import mixins
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
-from django.http import HttpResponse, JsonResponse
 
 # local import
 from odata.utility.helpers import ApiResponse, get_message, logout
@@ -14,18 +13,9 @@ from odata.serializers.auth_serializer import (
     LoginSerializer,
     CustomerRegistrationSerializer,
     UserForgotPasswordSerializer,
-    # VerifyUserForgotPasswordSerializer,
-    SetNewResetPasswordSerializer
+    VerifyUserForgotPasswordSerializer,
+    ResetPasswordSerializer
 )
-
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from django.contrib.sites.shortcuts import get_current_site
-from django.urls import reverse
-from django.core.mail import send_mail
-from Project.settings import EMAIL_HOST_USER
-from odata.serializers.auth_serializer import SetNewResetPasswordSerializer
 
 
 class LoginViewSet(viewsets.ModelViewSet, ApiResponse):
@@ -60,7 +50,7 @@ class LogoutViewSet(viewsets.GenericViewSet, mixins.CreateModelMixin, ApiRespons
         :param args: argument list
         :param kwargs: keyword argument object
         :return: logout a user
-        """
+        """        
         logout(request.user.id, request.META["HTTP_AUTHORIZATION"].split(" ")[1])
         return self.custom_response(
             message=SUCCESS_CODE["user"]["log_out"],
@@ -113,65 +103,65 @@ class SignupViewSet(viewsets.ModelViewSet, ApiResponse):
         )
 
 
-class UserForgotPassword(generics.GenericAPIView):
+class UserForgotPasswordViewSet(viewsets.GenericViewSet, ApiResponse):
     """
     forgot password
     """
 
     serializer_class = UserForgotPasswordSerializer
+    http_method_names = ("post",)
 
-    def post(self, request):
-        serializer = self.serializer_class(data=request.data)
-        email = request.data['email']
-
-        if User.objects.filter(email=email).exists():
-            user = User.objects.get(email=email)
-            uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
-            token = PasswordResetTokenGenerator().make_token(user)
-            current_site = get_current_site(request=request).domain
-            relativeLink = reverse('password-reset-confirm', kwargs={'uidb64': uidb64, 'token': token})
-            absurl = 'http://' + current_site + relativeLink
-            email_body = 'Hi \n Use this link to reset your password \n' + absurl
-            send_mail(subject='Reset your Password',
-                      message=email_body,
-                      from_email=EMAIL_HOST_USER,
-                      recipient_list=[email],
-                      fail_silently=False)
-            return JsonResponse({'success': 'We have have a  sent a link to reset password on your e-mail'},
-                                status=200)
-        else:
-            return JsonResponse({'message': 'User does not exists'},
-                                status=400)
+    def create(self, request):
+        forgot_password_serializer = self.serializer_class(data=request.data)
+        if forgot_password_serializer.is_valid():
+            forgot_password_serializer.save()
+            return self.custom_response(
+                SUCCESS_CODE["3000"],
+                data=forgot_password_serializer.data,
+                response_status=status.HTTP_200_OK,
+            )
+        return self.custom_error(
+            list(forgot_password_serializer.errors.values())[0][0],
+            status.HTTP_400_BAD_REQUEST,
+        )
 
 
-class VerifyUserForgotPassword(generics.GenericAPIView, ApiResponse):
-    def get(self, request, uidb64, token):
+class VerifyUserForgotPasswordViewSet(viewsets.GenericViewSet, ApiResponse):
+    """
+    forgot password
+    """
 
-        try:
-            id = smart_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(id=id)
-            if not PasswordResetTokenGenerator().check_token(user, token):
-                return JsonResponse({'error': 'Token expired, request a new one'},
-                                    status=401)
+    serializer_class = VerifyUserForgotPasswordSerializer
+    http_method_names = ("post",)
 
-            return JsonResponse({'success': True, 'message': 'Credentials valid', 'uidb64': uidb64, 'token': token},
-                                status=200)
+    def create(self, request):
+        verify_forgot_password_serializer = self.serializer_class(data=request.data)
+        if not verify_forgot_password_serializer.is_valid():
+            return self.custom_error(
+                get_message(verify_forgot_password_serializer.errors),
+                status.HTTP_400_BAD_REQUEST,
+            )
 
-        except DjangoUnicodeDecodeError as identifier:
-            if not PasswordResetTokenGenerator():
-                return HttpResponse({'error': 'Token is not valid'},
-                                    status=401)
+        verify_forgot_password_serializer.save()
+        return self.custom_response(
+            SUCCESS_CODE["user"]['verify_forgot_password'], data={}, response_status=status.HTTP_200_OK
+        )
 
 
-class ResetPassword(generics.GenericAPIView, ApiResponse):
+class ResetPasswordViewSet(viewsets.GenericViewSet, ApiResponse):
     """
     Class to reset password
     """
-    serializer_class = SetNewResetPasswordSerializer
+    serializer_class = ResetPasswordSerializer
+    http_method_names = ('post',)
 
-    def patch(self, request):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        return JsonResponse({'success': True,
-                             'message': 'Password reset successfully'},
-                            status=200)
+    def create(self, request):
+        reset_password_serializer = self.serializer_class(data=request.data)
+        if not reset_password_serializer.is_valid():
+            return self.custom_error(get_message(reset_password_serializer.errors),
+                                     status.HTTP_400_BAD_REQUEST
+                                     )
+
+        reset_password_serializer.save()
+        return self.custom_response(SUCCESS_CODE["user"]["reset_password"], data={},
+                                    response_status=status.HTTP_200_OK)
