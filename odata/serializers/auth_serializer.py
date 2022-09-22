@@ -4,15 +4,15 @@
 import re, random
 from datetime import datetime
 
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.db.models import Q
-from django.conf import settings
 from django.db import transaction
-from django.core.mail import send_mail
 from django.contrib.auth.models import User
-
-from rest_framework import exceptions
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 # local imports
 from odata.models import UserForgotPassword, Customer
@@ -25,10 +25,6 @@ from odata.utility.helpers import (
     validate_password,
     validate_name,
 )
-from django.core.mail import EmailMessage
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 
 class LoginSerializer(serializers.ModelSerializer, ApiResponse):
