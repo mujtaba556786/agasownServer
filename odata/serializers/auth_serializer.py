@@ -12,7 +12,6 @@ from django.contrib.auth.models import User
 
 from rest_framework import exceptions
 from rest_framework import serializers
-from rest_framework.exceptions import AuthenticationFailed
 
 # local imports
 from odata.models import UserForgotPassword, Customer
@@ -25,10 +24,6 @@ from odata.utility.helpers import (
     validate_password,
     validate_name,
 )
-from django.core.mail import EmailMessage
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
-from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
-from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 
 class LoginSerializer(serializers.ModelSerializer, ApiResponse):
@@ -235,39 +230,147 @@ class UserForgotPasswordSerializer(serializers.Serializer):
     forgot password serializer.
     """
 
-    email = serializers.EmailField(min_length=2)
+    email = serializers.EmailField(required=True)
 
-    class Meta:
-        fields = ['email']
+    def create(self, validated_data):
+        """
+
+        :param validated_data: data to be validated data.
+        :return:
+        """
+        try:
+            user_obj = User.objects.get(email=validated_data["email"])
+            if not user_obj.is_active:
+                raise exceptions.ValidationError(
+                    {"detail": ERROR_CODE["user"]["inactive_user"]}
+                )
+        except User.DoesNotExist:
+            raise exceptions.ValidationError(
+                {"detail": ErrorManager().get_not_exist_message("Email")}
+            )
+        # create a forgot password instance and set is_consumed false.
+        try:
+            forgot_pass_token = UserForgotPassword.objects.get(user=user_obj)
+            forgot_pass_token.delete()
+        except UserForgotPassword.DoesNotExist:
+            pass
+        # the nosec comment is for bandit - see issue #25
+        # TL;DR pseudo-random generator is unsafe for crypto use but OK here
+
+        token = "".join([str(random.randrange(9)) for _ in range(4)])  # nosec
+        UserForgotPassword.objects.create(user=user_obj, is_consumed=False, token=token)
+        subject = "Forgot Password Verification"
+        message = SUCCESS_CODE["user"]["verification_otp"].format(
+            "Forgot password", token
+        )
+        email_from = settings.EMAIL_HOST_USER
+        email_to = [user_obj.email,]
+        send_mail(subject, message, email_from, email_to)
+        return user_obj
 
 
-class SetNewResetPasswordSerializer(serializers.Serializer):
+class VerifyUserForgotPasswordSerializer(serializers.Serializer):
+    """
+    forgot password serializer.
+    """
+
+    token = serializers.CharField(max_length=10, required=True)
+    email = serializers.EmailField(required=True)
+
+    def create(self, validated_data):
+        """
+
+        :param validated_data:
+        :return:
+        """
+        token = validated_data.pop("token")
+        try:
+            user_obj = User.objects.get(email=validated_data["email"])
+            if not user_obj.is_active:
+                raise exceptions.ValidationError(
+                    {"detail": ERROR_CODE["user"]["inactive_user"]}
+                )
+        except User.DoesNotExist:
+            raise exceptions.ValidationError(
+                {"detail": ErrorManager().get_not_exist_message("Email")}
+            )
+
+        try:
+            reset_password_instance = UserForgotPassword.objects.get(
+                token=token,
+                user__is_active=True,
+                is_consumed=False,
+                user=user_obj                
+            )
+        except UserForgotPassword.DoesNotExist:
+            raise serializers.ValidationError(
+                {"detail": ERROR_CODE["password"]["invalid_otp"]}
+            )
+
+        return reset_password_instance
+
+
+class ResetPasswordSerializer(serializers.ModelSerializer):
     """
     Reset password serializer.
     """
-    password = serializers.CharField(min_length=6, max_length=20, write_only=True)
-    token = serializers.CharField(min_length=1, write_only=True)
-    uidb64 = serializers.CharField(min_length=1, write_only=True)
+
+    token = serializers.CharField(max_length=100, required=True)
+    password = serializers.CharField(
+        max_length=200,
+        required=True,
+        error_messages={"blank": ErrorManager().get_blank_field_message("password")},
+    )
+    confirm_password = serializers.CharField(
+        required=True,
+        error_messages={
+            "blank": ErrorManager().get_blank_field_message("confirm password")
+        },
+    )
 
     class Meta:
-        fields = ['password', 'token', 'uidb64']
+        """
+        Meta Class
+        """
 
-    def validate(self, attrs):
+        model = User
+        fields = ["token", "password", "confirm_password"]
+
+    def validate_password(self, password):
+        """
+        Method to validate password
+        """
+        return validate_password(password)
+
+    def create(self, validated_data):
+        """
+
+        :param validated_data:
+        :return:
+        """
+        token = validated_data.pop("token")
+        password = validated_data.pop("password")
+        if not token:
+            serializers.ValidationError(
+                {"detail": ERROR_CODE["global_error"]["blank_field"].format("otp")}
+            )
         try:
-            password = attrs.get('password')
-            token = attrs.get('token')
-            uidb64 = attrs.get('uidb64')
+            reset_password_instance = UserForgotPassword.objects.get(
+                token=token, user__is_active=True, is_consumed=False
+            )
+        except UserForgotPassword.DoesNotExist:
+            raise serializers.ValidationError(
+                {"detail": ERROR_CODE["global_error"]["invalid"].format("otp")}
+            )
 
-            id = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(id=id)
+        if password != validated_data.get("confirm_password"):
+            raise serializers.ValidationError(
+                {"details": ERROR_CODE["password"]["confirm_password_invalid"]}
+            )
+        reset_password_instance.is_consumed = True
+        reset_password_instance.save()
 
-            if not PasswordResetTokenGenerator().check_token(user, token):
-                raise AuthenticationFailed('The reset link is invalid', 401)
+        reset_password_instance.user.set_password(password)
+        reset_password_instance.user.save()
 
-            user.set_password(password)
-            user.save()
-
-        except Exception as e:
-            raise AuthenticationFailed('The reset link is invalid', 401)
-
-        return super().validate(attrs)
+        return {"token": token, "password": password}
