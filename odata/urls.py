@@ -1,3 +1,5 @@
+from django.conf.urls import url
+
 from .sitemaps import *
 from django.conf.urls.static import static
 from django.conf import settings
@@ -17,25 +19,20 @@ from odata.views.accounts import (
     LoginViewSet,
     SignupViewSet,
     LogoutViewSet,
-    UserForgotPasswordViewSet,
-    VerifyUserForgotPasswordViewSet,
-    ResetPasswordViewSet,
-    ResetPasswordViewSet,
+    UserForgotPassword,
+    VerifyUserForgotPassword,
+    ResetPassword,
 )
 from odata.views.pg_stripe import (
     CreateCheckoutSession,
     StipeCheckoutSession,
     StripeCard,
-    StripSofort,
     # StripeWebHookView,
     success,
 
 )
 
-from odata.views.paypal import (
-    Paypal
-
-)
+# from odata.views.reset_password import PasswordTokenCheck
 
 viewset_dict = {
     "get": "list",
@@ -102,17 +99,17 @@ router.register(r"category", CategoryViewSet),
 router.register(r"login", LoginViewSet, basename="login")
 router.register(r"logout", LogoutViewSet, basename="logout")
 router.register(r"sign-up", SignupViewSet, basename="sign-up")
-router.register(
-    r"forgot-password", UserForgotPasswordViewSet, basename="forgot-password"
-)
-router.register(
-    r"verify-forgot-password",
-    VerifyUserForgotPasswordViewSet,
-    basename="verify-forgot-password",
-)
-router.register(r"reset-password", ResetPasswordViewSet, basename="reset-password")
+# router.register(
+#     r"forgot-password", UserForgotPasswordViewSet, basename="request-reset-email"
+# )
+# router.register(
+#     r"verify-forgot-password/<uidb64>/token",
+#     VerifyUserForgotPasswordViewSet,
+#     basename="password-reset-confirm",
+# )
+# router.register(r"reset-password", ResetPasswordViewSet, basename="reset-password")
 urlpatterns = [
-                  # path("api/", include(router.urls)),
+                  url(r'^api/', include(router.urls)),
                   path(
                       "sitemap.xml",
                       sitemap,
@@ -121,10 +118,12 @@ urlpatterns = [
                   ),
                   path("", include(router.urls)),
                   path("stripe/", StripeCard.as_view()),
-                  path("stripe/sofort/", StripSofort.as_view()),
                   path("stripe/check-out", StipeCheckoutSession.as_view()),
                   path("stripe/create-checkout", CreateCheckoutSession.as_view()),
                   # path("stripe/webhook", StripeWebHookView.as_view()),
                   path("stripe/success", success),
-                  path("paypal/", Paypal.as_view()),
+                  path("request_reset_email/", UserForgotPassword.as_view(), name="request_reset_email"),
+                  path("<uidb64>/<token>/", VerifyUserForgotPassword.as_view(),
+                       name='password_reset_confirm'),
+                  path('reset_password/', ResetPassword.as_view(), name='reset-password')
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
