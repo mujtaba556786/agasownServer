@@ -11,6 +11,7 @@ from webbrowser import get
 # # Third Party import
 import stripe
 from django.conf import settings
+from django.core.mail import send_mail
 from rest_framework.views import APIView
 from rest_framework import status, response
 from django.views.generic import TemplateView
@@ -22,7 +23,8 @@ from django.views.decorators.csrf import csrf_exempt
 
 # local import
 from odata.models import Product, Payment, Customer
-from Project.settings import STRIPE_SECRET_KEY, STRIPE_PUBLISH_KEY, DOMAIN_URL
+from Project.settings import STRIPE_SECRET_KEY, STRIPE_PUBLISH_KEY, DOMAIN_URL,EMAIL_HOST_USER
+
 
 stripe.api_key = STRIPE_SECRET_KEY
 
@@ -47,6 +49,7 @@ def create_payment_method(card_data):
         card=card_data
     )
     return payment_method
+
 
 # API for credit_cards payment
 
@@ -86,7 +89,7 @@ class StripeCard(APIView):
                 #     "name": data.get("shipping_name", create_customer["name"]),
                 #     "address": data.get("shipping_address", create_customer["address"])
                 # },
-                
+
                 amount=data.get("amount"),
                 currency=data.get("currency"),
                 payment_method_types=["card"],
@@ -132,7 +135,6 @@ class StripeCard(APIView):
         retrieve = stripe.PaymentIntent.retrieve(
             intent_create['id'],
         )
-        
 
         return HttpResponse("payment Successful")
 
@@ -140,10 +142,24 @@ class StripeCard(APIView):
 class StripSofort(APIView):
     def get(self, request):
         payment_id = request.GET["payment_intent"]
-        customer_id = request.GET["payment_intent_client_secret"]
-        # print(customer_id)
+        retrieve_customer = stripe.PaymentIntent.retrieve(payment_id)
+        print(retrieve_customer)
+        total_amount = str(retrieve_customer.amount)
+        currency = str(retrieve_customer.currency)
+        customer_id = retrieve_customer.customer
+        cus_detials = stripe.Customer.retrieve(customer_id)
+        cus_name = cus_detials.name
+        customer_email = cus_detials.email
+        email_body = "Hello " + cus_name + "\n Thank you for making the payment \n We have received your payment of amount "+ currency + total_amount + "\n Mode of payment: Bank Transfer \nYour order will be delivered within 3 working days.\n You will receive an email shortly after it's dispatched.\n Best wishes,\n AgasOwn Marketing Team \n "
 
-        return HttpResponse(f"Payment successfull for {payment_id} of Customer {customer_id}")
+        send_mail(
+            subject='Agas Own Successful Payment',
+            message=email_body,
+            from_email=EMAIL_HOST_USER,
+            recipient_list=[customer_email],
+            fail_silently=False)
+        return JsonResponse({"message": "Payment Successful"},
+                            status=200)
 
     def post(self, request):
         data = request.POST.dict()
@@ -191,7 +207,6 @@ class StripSofort(APIView):
                 payment_method=payment_method["id"],
                 payment_method_types=["sofort"],
             )
-
 
             confirm_payment = stripe.PaymentIntent.confirm(
                 payment_intent["id"],
@@ -259,7 +274,7 @@ class CreateCheckoutSession(APIView):
                         i = i + 1
             checkout_session = stripe.checkout.Session.create(
                 success_url=domain_url
-                + "stripe/success?session_id={CHECKOUT_SESSION_ID}",
+                            + "stripe/success?session_id={CHECKOUT_SESSION_ID}",
                 cancel_url=domain_url + "stripe/cancelled",
                 payment_method_types=["card", "sofort"],
                 mode="payment",
@@ -268,6 +283,7 @@ class CreateCheckoutSession(APIView):
             return response.Response({"sessionId": checkout_session["id"]})
         except Exception as e:
             return response.Response(error=str(e), status=status.HTTP_403_FORBIDDEN)
+
 
 # class StripeWebhookView(APIView):
 #     def post(self,request):

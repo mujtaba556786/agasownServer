@@ -26,9 +26,15 @@ from odata.views.pg_stripe import (
     CreateCheckoutSession,
     StipeCheckoutSession,
     StripeCard,
+    StripSofort,
     # StripeWebHookView,
     success,
-    
+
+)
+
+from odata.views.paypal import (
+    Paypal
+
 )
 
 viewset_dict = {
@@ -77,7 +83,6 @@ product_list = ProductViewSet.as_view(viewset_dict)
 customer_list = CustomerViewSet.as_view(viewset_dict)
 category_list = CategoryViewSet.as_view(viewset_dict)
 
-
 router = routers.DefaultRouter()
 # router.register(r'products', ProductViewSet, r"tool")
 
@@ -86,7 +91,6 @@ sitemaps_dict = {
     "product": Product_Sitemap,
     # 'order' : Order_Sitemap,
 }
-
 
 router.register(r"products", ProductViewSet),
 router.register(r"payments", PaymentViewset),
@@ -108,17 +112,19 @@ router.register(
 )
 router.register(r"reset-password", ResetPasswordViewSet, basename="reset-password")
 urlpatterns = [
-    # path("api/", include(router.urls)),
-    path(
-        "sitemap.xml",
-        sitemap,
-        {"sitemaps": sitemaps_dict},
-        name="django.contrib.sitemaps.views.sitemap",
-    ),
-    path("", include(router.urls)),
-    path("stripe/", StripeCard.as_view()),
-    path("stripe/check-out", StipeCheckoutSession.as_view()),
-    path("stripe/create-checkout", CreateCheckoutSession.as_view()),
-    # path("stripe/webhook", StripeWebHookView.as_view()),
-    path("stripe/success", success),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+                  # path("api/", include(router.urls)),
+                  path(
+                      "sitemap.xml",
+                      sitemap,
+                      {"sitemaps": sitemaps_dict},
+                      name="django.contrib.sitemaps.views.sitemap",
+                  ),
+                  path("", include(router.urls)),
+                  path("stripe/", StripeCard.as_view()),
+                  path("stripe/sofort/", StripSofort.as_view()),
+                  path("stripe/check-out", StipeCheckoutSession.as_view()),
+                  path("stripe/create-checkout", CreateCheckoutSession.as_view()),
+                  # path("stripe/webhook", StripeWebHookView.as_view()),
+                  path("stripe/success", success),
+                  path("paypal/", Paypal.as_view()),
+              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
