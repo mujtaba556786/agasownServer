@@ -14,6 +14,8 @@ from odata.views.apis import (
     CategoryViewSet,
     PaymentViewset,
     NewsLetterViewSet,
+    Wishlist,
+    DeleteWishlist,
 )
 from odata.views.accounts import (
     LoginViewSet,
@@ -125,5 +127,7 @@ urlpatterns = [
                   path("request_reset_email/", UserForgotPassword.as_view(), name="request_reset_email"),
                   path("<uidb64>/<token>/", VerifyUserForgotPassword.as_view(),
                        name='password_reset_confirm'),
-                  path('reset_password/', ResetPassword.as_view(), name='reset-password')
+
+                  path('wishlist/', Wishlist.as_view()),
+                  path('wishlist/delete',DeleteWishlist.as_view()),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,4 +1,5 @@
-from rest_framework import viewsets, status
+from django.http import HttpResponse, JsonResponse
+from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -23,10 +24,11 @@ from odata.serializers.serializers import (
     NewsLetterSerializers,
 )
 
+
 # Create your views here.
 class ProductViewSet(viewsets.ModelViewSet):
     """This viewset is used for crud operations"""
-    
+
     model = Product
     queryset = Product.objects.all()
     serializer_class = ProductSerializers
@@ -80,9 +82,9 @@ class ProductImageViewSet(viewsets.ModelViewSet):
     model = ProductImage
     queryset = ProductImage.objects.all()
     serializer_class = ProductImageSerializers
-    
+
     def get_object(self):
-        return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))    
+        return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
 
 
 class ProductVariantViewSet(viewsets.ModelViewSet):
@@ -112,8 +114,9 @@ class CustomerViewSet(viewsets.ModelViewSet):
 
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializers
-    permission_classes = [IsAuthenticated]
-    
+
+    # permission_classes = [IsAuthenticated]
+
     def get_object(self):
         return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
 
@@ -139,3 +142,64 @@ class PaymentViewset(viewsets.ModelViewSet):
 
     def get_object(self):
         return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
+
+
+class Wishlist(generics.GenericAPIView):
+    def patch(self, request):
+        customer_id = request.data["customer_id"]
+        product_id = request.data["product_id"]
+        cus_objInstance = ObjectId(customer_id)
+        product_objInstance = ObjectId(product_id)
+        if Customer.objects.filter(_id=cus_objInstance):
+            customer = Customer.objects.get(_id=cus_objInstance)
+            if Product.objects.filter(_id=product_objInstance):
+                customer_wishlist = customer.wishlist.split(",")
+                if product_id in customer_wishlist:
+                    return JsonResponse({"message": "Product already exists"},
+                                        status=400)
+                else:
+                    wishlist = customer.wishlist
+                    wishlist = f"{wishlist},{product_id}" if wishlist else f"{product_id}"
+                    customer.wishlist = wishlist
+                    customer.save()
+            else:
+                return JsonResponse({"message": "Product doesn't exists"},
+                                    status=400)
+        else:
+            return JsonResponse({"message": "Customer doesn't exists"},
+                                status=400)
+
+        return JsonResponse({"message": "Added Successfully"},
+                            status=200)
+
+
+class DeleteWishlist(generics.GenericAPIView):
+    def delete(self, request):
+        customer_id = request.data["customer_id"]
+        product_id = request.data["product_id"]
+
+        cus_objInstance = ObjectId(customer_id)
+        product_objInstance = ObjectId(product_id)
+
+        if Customer.objects.filter(_id=cus_objInstance):
+            customer = Customer.objects.get(_id=cus_objInstance)
+            if Product.objects.filter(_id=product_objInstance):
+                if customer.wishlist:
+                    customer_wishlist = customer.wishlist.split(',')
+                    if product_id in customer_wishlist:
+                        customer_wishlist.remove(product_id)
+                        customer.wishlist = ",".join(customer_wishlist)
+                    else:
+                        return JsonResponse({"message": "Product_id doesn't exists in wishlist"},
+                                            status=400)
+                else:
+                    return JsonResponse({"message": "Wishlist is empty"}, status=200)
+            else:
+                return JsonResponse({"message": "Product_id doesn't exists"},
+                                    status=400)
+        else:
+            return JsonResponse({"message": "Customer doesn't exists"},
+                                status=400)
+        customer.save()
+        return JsonResponse({"message": "Deleted Successfully"},
+                            status=200)
