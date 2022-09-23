@@ -12,6 +12,7 @@ from webbrowser import get
 import stripe
 from django.conf import settings
 from django.core.mail import send_mail
+from django.shortcuts import redirect
 from rest_framework.views import APIView
 from rest_framework import status, response
 from django.views.generic import TemplateView
@@ -143,7 +144,6 @@ class StripSofort(APIView):
     def get(self, request):
         payment_id = request.GET["payment_intent"]
         retrieve_customer = stripe.PaymentIntent.retrieve(payment_id)
-        print(retrieve_customer)
         total_amount = str(retrieve_customer.amount)
         currency = str(retrieve_customer.currency)
         customer_id = retrieve_customer.customer
@@ -158,8 +158,8 @@ class StripSofort(APIView):
             from_email=EMAIL_HOST_USER,
             recipient_list=[customer_email],
             fail_silently=False)
-        return JsonResponse({"message": "Payment Successful"},
-                            status=200)
+        return redirect("http://localhost:8080/index.html#/payment",
+                        status=200)
 
     def post(self, request):
         data = request.POST.dict()
