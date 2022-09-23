@@ -33,6 +33,7 @@ from odata.views.pg_stripe import (
     success,
 
 )
+from odata.views.paypal import Paypal
 
 # from odata.views.reset_password import PasswordTokenCheck
 
@@ -124,10 +125,11 @@ urlpatterns = [
                   path("stripe/create-checkout", CreateCheckoutSession.as_view()),
                   # path("stripe/webhook", StripeWebHookView.as_view()),
                   path("stripe/success", success),
+                  path("paypal/payment", Paypal.as_view()),
                   path("request_reset_email/", UserForgotPassword.as_view(), name="request_reset_email"),
                   path("<uidb64>/<token>/", VerifyUserForgotPassword.as_view(),
                        name='password_reset_confirm'),
-
+                  path("reset_password/",ResetPassword.as_view()),
                   path('wishlist/', Wishlist.as_view()),
                   path('wishlist/delete',DeleteWishlist.as_view()),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
