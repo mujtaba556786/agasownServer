@@ -3,7 +3,7 @@ from django.http import HttpResponse, JsonResponse
 import paypalrestsdk
 from django.core.mail import send_mail
 from Project.settings import EMAIL_HOST_USER
-
+from django.shortcuts import redirect
 # import logging
 from Project.settings import PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET
 
@@ -35,8 +35,8 @@ class Paypal(APIView):
                 recipient_list=[email],
                 fail_silently=False)
 
-            return JsonResponse({"message": "Mail has been send to your e-mail for payment details"},
-                                status=200)
+            return redirect("http://localhost:8080/index.html#/payment",
+                            status=200)
 
         else:
             return JsonResponse({"error": payment.error}, status=500)
@@ -53,7 +53,7 @@ class Paypal(APIView):
             "payer": {
                 "payment_method": "paypal"},
             "redirect_urls": {
-                "return_url": "http://localhost:8000/paypal/",
+                "return_url": "http://localhost:8000/paypal/payment/",
                 "cancel_url": "http://localhost:8000/"},
             "transactions": [{
                 "item_list": {
