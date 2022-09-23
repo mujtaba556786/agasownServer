@@ -211,7 +211,7 @@ class StripSofort(APIView):
             confirm_payment = stripe.PaymentIntent.confirm(
                 payment_intent["id"],
                 payment_method=payment_intent["payment_method"],
-                return_url="http://localhost:8000/stripe/sofort"
+                return_url="http://localhost:8000/stripe/sofort/"
             )
             url = confirm_payment["next_action"]
             check_url = url["redirect_to_url"]

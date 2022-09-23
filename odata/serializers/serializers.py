@@ -91,8 +91,9 @@ class CustomerSerializers(serializers.ModelSerializer):
             email=email,
             username=username,
         )
+        customer = Customer.objects.create(user=user)
         # instance.user = user
-        instance = Customer.objects.filter(user=user).update(**validated_data)
+        # instance = Customer.objects.filter(user=user).update(**validated_data)
         return Customer.objects.get(user=user)
 
     def validate(self, validated_data):
