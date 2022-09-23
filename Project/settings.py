@@ -263,7 +263,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'test@gmail.com'
-EMAIL_HOST_PASSWORD = 'test@123'
+EMAIL_HOST_PASSWORD = 'test123'
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
@@ -304,4 +304,6 @@ MEDIA_URL = '/media/'
 
 STRIPE_PUBLISH_KEY = "pk_test_51IXYUpLKVJco8g7ExbIbUxKhXGZSLgMgE1UE922q1fP54VAfwNlUYJOu4Yc5hTKCGwxbhQvhdo9wWw5t4iJkAgGe00ayjk9Igh"
 STRIPE_SECRET_KEY = "sk_test_51IXYUpLKVJco8g7Em855AyduHVR4incHWz2fAZBGuhNRvByUrTvOe6wCaS3mzGlg4i2eAvDmGwTtjyHkWDoUojJu00bq0rFiwG"
+PAYPAL_CLIENT_ID = "Aa176Af9rSh-7gDZELoNnJoGTjOpXfo0ECrNw6HjD4633ArdVOw59D4rafyywX887C-N9k_albOUlBiE"
+PAYPAL_CLIENT_SECRET = "EGyQfM4tLnJTszmQcnIF185Br3YUUt2VEyaj9yQrLZeiLqwKUxB5wWeHomsrwSnqJEahIC1TuMbggpse"
 DOMAIN_URL = "http://127.0.0.1:8000/"

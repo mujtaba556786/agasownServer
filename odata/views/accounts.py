@@ -129,7 +129,7 @@ class UserForgotPassword(generics.GenericAPIView):
             token = PasswordResetTokenGenerator().make_token(user)
             current_site = "localhost:8080/index.html#/newpassword"
             reverse_relativeLink = reverse(viewname="password_reset_confirm", kwargs={'uidb64': uidb64, 'token': token})
-            relative_link = reverse_relativeLink.replace("/", "")
+            relative_link = reverse_relativeLink.replace("/", "_")
             absurl = f"http://{current_site}?token={relative_link}"
             email_body = 'Hi \n Use this link to reset your password \n' + absurl
             send_mail(subject='Reset your Password',
