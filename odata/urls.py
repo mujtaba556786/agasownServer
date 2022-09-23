@@ -8,7 +8,7 @@ from django.urls import path, include
 
 from rest_framework import routers
 from rest_framework.routers import SimpleRouter, Route
-from .views.apis import (
+from odata.views.apis import (
     ProductViewSet,
     CustomerViewSet,
     CategoryViewSet,
@@ -124,10 +124,10 @@ urlpatterns = [
                   path("stripe/create-checkout", CreateCheckoutSession.as_view()),
                   # path("stripe/webhook", StripeWebHookView.as_view()),
                   path("stripe/success", success),
-                  path("request-reset-email/", UserForgotPassword.as_view(), name="request-reset-email"),
-                  path("password-reset/<uidb64>/<token>/", VerifyUserForgotPassword.as_view(),
-                       name='password-reset-confirm'),
-                  path('reset-password/', ResetPassword.as_view(), name='reset-password'),
+                  path("request_reset_email/", UserForgotPassword.as_view(), name="request_reset_email"),
+                  path("<uidb64>/<token>/", VerifyUserForgotPassword.as_view(),
+                       name='password_reset_confirm'),
+
                   path('wishlist/', Wishlist.as_view()),
                   path('wishlist/delete',DeleteWishlist.as_view()),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
