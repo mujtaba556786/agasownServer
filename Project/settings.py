@@ -230,12 +230,26 @@ WSGI_APPLICATION = 'Project.wsgi.application'
         
 #     }
 # }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'djongo',
+#         'NAME': 'doadmin',
+#         'HOST': 'mongodb+srv://db-mongodb-fra1-72612-23575786.mongo.ondigitalocean.com',
+#         'PORT': 27017,
+#     }
+# }
+
 DATABASES = {
     'default': {
         'ENGINE': 'djongo',
-        'NAME': 'ecommerce_db',
-        'HOST': '127.0.0.1',
-        'PORT': 27017,
+        'NAME': 'do_ecommerce',
+        'CLIENT': {
+            'host': "mongodb+srv://db-mongodb-fra1-72612-23575786.mongo.ondigitalocean.com",
+            'username': "doadmin",
+            'password': "3r26F4B9C05cNm1z",
+            # 'authSource': 'admin',
+            # 'authMechanism': 'SCRAM-SHA-1'
+        }
     }
 }
 
