@@ -191,6 +191,7 @@ class ProductVariant(models.Model):
     size = models.CharField(max_length=100)
     color = models.CharField(max_length=100)
     material = models.CharField(max_length=100)
+    ean = models.CharField(max_length=100, null=True)
     image = models.URLField(null=True, blank=True)
     
 # class Shipper(models.Model):
