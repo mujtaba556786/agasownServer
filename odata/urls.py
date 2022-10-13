@@ -16,6 +16,7 @@ from odata.views.apis import (
     NewsLetterViewSet,
     Wishlist,
     DeleteWishlist,
+    ProductVariants,
 )
 from odata.views.accounts import (
     LoginViewSet,
@@ -113,25 +114,26 @@ router.register(r"sign-up", SignupViewSet, basename="sign-up")
 # )
 # router.register(r"reset-password", ResetPasswordViewSet, basename="reset-password")
 urlpatterns = [
-                  url(r'^api/', include(router.urls)),
-                  path(
-                      "sitemap.xml",
-                      sitemap,
-                      {"sitemaps": sitemaps_dict},
-                      name="django.contrib.sitemaps.views.sitemap",
-                  ),
-                  path("", include(router.urls)),
-                  path("stripe/", StripeCard.as_view()),
-                  path("stripe/sofort/", StripSofort.as_view()),
-                  path("stripe/check-out", StipeCheckoutSession.as_view()),
-                  path("stripe/create-checkout", CreateCheckoutSession.as_view()),
-                  # path("stripe/webhook", StripeWebHookView.as_view()),
-                  path("stripe/success", success),
-                  path("paypal/payment/", Paypal.as_view()),
-                  path("request_reset_email/", UserForgotPassword.as_view(), name="request_reset_email"),
-                  path("<uidb64>/<token>/", VerifyUserForgotPassword.as_view(),
-                       name='password_reset_confirm'),
-                  path("reset_password/", ResetPassword.as_view()),
-                  path('wishlist/', Wishlist.as_view()),
-                  path('wishlist/delete', DeleteWishlist.as_view()),
-              ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    url(r'^api/', include(router.urls)),
+    path(
+        "sitemap.xml",
+        sitemap,
+        {"sitemaps": sitemaps_dict},
+        name="django.contrib.sitemaps.views.sitemap",
+    ),
+    path("", include(router.urls)),
+    path("stripe/", StripeCard.as_view()),
+    path("stripe/sofort/", StripSofort.as_view()),
+    path("stripe/check-out", StipeCheckoutSession.as_view()),
+    path("stripe/create-checkout", CreateCheckoutSession.as_view()),
+    # path("stripe/webhook", StripeWebHookView.as_view()),
+    path("stripe/success", success),
+    path("paypal/payment/", Paypal.as_view()),
+    path("request_reset_email/", UserForgotPassword.as_view(), name="request_reset_email"),
+    path("<uidb64>/<token>/", VerifyUserForgotPassword.as_view(),
+         name='password_reset_confirm'),
+    path("reset_password/", ResetPassword.as_view()),
+    path('wishlist/', Wishlist.as_view()),
+    path('wishlist/delete', DeleteWishlist.as_view()),
+    path('product/variant', ProductVariants.as_view()),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
