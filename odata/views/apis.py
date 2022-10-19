@@ -99,7 +99,7 @@ class NewsLetterViewSet(viewsets.ModelViewSet):
 
     queryset = NewsletterSubscription.objects.all()
     serializer_class = NewsLetterSerializers
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
