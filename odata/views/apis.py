@@ -107,7 +107,7 @@ class NewsLetterViewSet(viewsets.ModelViewSet):
 
 class CustomerViewSet(viewsets.ModelViewSet):
     """This viewset is used for crud operations"""
-
+    model = Customer
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializers
 
