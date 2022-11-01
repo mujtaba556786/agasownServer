@@ -111,11 +111,11 @@ class NewsLetterViewSet(viewsets.ModelViewSet):
 
 class CustomerViewSet(viewsets.ModelViewSet):
     """This viewset is used for crud operations"""
-
+    model = Customer
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializers
 
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
