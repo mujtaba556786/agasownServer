@@ -25,7 +25,7 @@ SECRET_KEY = 'c1v1#1svq(s5%ogm2(re@1*efk+hd5!#xag(0ijpjm@%c$vv51'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['64.227.115.243','www.aoande.de','aoande.de']
+ALLOWED_HOSTS = ['64.227.115.243','www.aoandu.de','aoandu.de']
 
 
 # Application definition
