@@ -230,6 +230,16 @@ WSGI_APPLICATION = 'Project.wsgi.application'
         
 #     }
 # }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'djongo',
+#         'NAME': 'doadmin',
+#         'HOST': 'mongodb+srv://db-mongodb-fra1-72612-23575786.mongo.ondigitalocean.com',
+#         'PORT': 27017,
+#     }
+# }
+
+
 DATABASES = {
     'default': {
         'ENGINE': 'djongo',

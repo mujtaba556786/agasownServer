@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from bson import ObjectId
+from rest_framework.views import APIView
 
 from odata.models import (
     Payment,
@@ -87,15 +88,10 @@ class ProductImageViewSet(viewsets.ModelViewSet):
         return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
 
 
-class ProductVariantViewSet(viewsets.ModelViewSet):
-    """This viewset is used for crud operations"""
-
-    model = ProductVariant
-    queryset = ProductVariant.objects.all()
-    serializer_class = ProductVariantSerializers
-
-    def get_object(self):
-        return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
+# class ProductVariantViewSet(generics.GenericAPIView):
+#     """This viewset is used for crud operations"""
+#
+#     serializer_class = ProductVariantSerializers
 
 
 class NewsLetterViewSet(viewsets.ModelViewSet):
@@ -103,7 +99,7 @@ class NewsLetterViewSet(viewsets.ModelViewSet):
 
     queryset = NewsletterSubscription.objects.all()
     serializer_class = NewsLetterSerializers
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
@@ -153,7 +149,7 @@ class Wishlist(generics.GenericAPIView):
         if Customer.objects.filter(_id=cus_objInstance):
             customer = Customer.objects.get(_id=cus_objInstance)
             if Product.objects.filter(_id=product_objInstance):
-                customer_wishlist = customer.wishlist.split(",")
+                customer_wishlist = str(customer.wishlist).split(",")
                 if product_id in customer_wishlist:
                     return JsonResponse({"message": "Product already exists"},
                                         status=400)
@@ -202,4 +198,32 @@ class DeleteWishlist(generics.GenericAPIView):
                                 status=400)
         customer.save()
         return JsonResponse({"message": "Deleted Successfully"},
+                            status=200)
+
+
+class ProductVariants(generics.GenericAPIView):
+    def post(self, request):
+        product_id = request.data["product_id"]
+        if not product_id:
+            return JsonResponse({"message": "Enter product id"}, status=400)
+        else:
+            product_objInstance = ObjectId(product_id)
+
+            product = Product.objects.get(_id=product_objInstance)
+            if not product:
+                return JsonResponse({"message": "Product doesn't exists"}, status=400)
+
+            else:
+                size = request.data["size"]
+                ean = request.data["ean"]
+                color = request.data["color"]
+                material = request.data["material"]
+
+                productVariant = ProductVariant(size=size, color=color, material=material, parent_product=product,
+                                                ean=ean)
+                productVariant.save()
+                product.ean = ean
+                product.save()
+
+        return JsonResponse({"message": "Product Variant added successfully"},
                             status=200)

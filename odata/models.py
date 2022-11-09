@@ -46,7 +46,8 @@ class Categories(models.Model):
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
     category_name = models.CharField(max_length=100,null=True,blank=True)  
     category_name_de = models.CharField(max_length=100,null=True,blank=True)  
-    picture = models.ImageField(null=True,blank=True, upload_to="images")
+    # picture = models.ImageField(null=True,blank=True, upload_to="images")
+    picture = models.CharField(max_length=1000, null=True, blank=True)
     active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
@@ -147,8 +148,8 @@ class Product(models.Model):
     ean = models.CharField(max_length=255, null=True, blank=True)
     title = models.CharField(max_length=1024)
     title_de = models.CharField(max_length=1024, blank=True, null=True)    
-    size = models.CharField(max_length=100,null=True,blank=True)
-    color = models.CharField(max_length=100,null=True,blank=True)
+    # size = models.CharField(max_length=100,null=True,blank=True)
+    # color = models.CharField(max_length=100,null=True,blank=True)
     discount = models.DecimalField(decimal_places=2, max_digits=10, verbose_name="Discount %")
     product_available = models.BooleanField(default=False)        
     picture = models.URLField(null=True,blank=True)
@@ -191,6 +192,7 @@ class ProductVariant(models.Model):
     size = models.CharField(max_length=100)
     color = models.CharField(max_length=100)
     material = models.CharField(max_length=100)
+    ean = models.CharField(max_length=100, null=True)
     image = models.URLField(null=True, blank=True)
     
 # class Shipper(models.Model):
