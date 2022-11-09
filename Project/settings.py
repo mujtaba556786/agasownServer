@@ -23,9 +23,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'c1v1#1svq(s5%ogm2(re@1*efk+hd5!#xag(0ijpjm@%c$vv51'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['64.227.115.243']
+ALLOWED_HOSTS = ['64.227.115.243','www.aoandu.de','aoandu.de']
 
 
 # Application definition
@@ -239,6 +239,7 @@ WSGI_APPLICATION = 'Project.wsgi.application'
 #     }
 # }
 
+
 DATABASES = {
     'default': {
         'ENGINE': 'djongo',
@@ -247,8 +248,6 @@ DATABASES = {
             'host': "mongodb+srv://db-mongodb-fra1-72612-23575786.mongo.ondigitalocean.com",
             'username': "doadmin",
             'password': "3r26F4B9C05cNm1z",
-            # 'authSource': 'admin',
-            # 'authMechanism': 'SCRAM-SHA-1'
         }
     }
 }
