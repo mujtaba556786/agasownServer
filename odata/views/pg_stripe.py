@@ -18,14 +18,13 @@ from rest_framework import status, response
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from django.http.response import JsonResponse, HttpResponse
+from django.http.response import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 # import sofort
 
 # local import
 from odata.models import Product, Payment, Customer
-from Project.settings import STRIPE_SECRET_KEY, STRIPE_PUBLISH_KEY, DOMAIN_URL,EMAIL_HOST_USER
-
+from Project.settings import STRIPE_SECRET_KEY, STRIPE_PUBLISH_KEY, DOMAIN_URL, EMAIL_HOST_USER
 
 stripe.api_key = STRIPE_SECRET_KEY
 
@@ -142,6 +141,7 @@ class StripeCard(APIView):
 
 class StripSofort(APIView):
     def get(self, request):
+        print("**reached here")
         payment_id = request.GET["payment_intent"]
         retrieve_customer = stripe.PaymentIntent.retrieve(payment_id)
         total_amount = str(retrieve_customer.amount)
@@ -150,7 +150,7 @@ class StripSofort(APIView):
         cus_detials = stripe.Customer.retrieve(customer_id)
         cus_name = cus_detials.name
         customer_email = cus_detials.email
-        email_body = "Hello " + cus_name + "\n Thank you for making the payment \n We have received your payment of amount "+ currency + total_amount + "\n Mode of payment: Bank Transfer \nYour order will be delivered within 3 working days.\n You will receive an email shortly after it's dispatched.\n Best wishes,\n AgasOwn Marketing Team \n "
+        email_body = "Hello " + cus_name + "\n Thank you for making the payment \n We have received your payment of amount " + currency + total_amount + "\n Mode of payment: Bank Transfer \nYour order will be delivered within 3 working days.\n You will receive an email shortly after it's dispatched.\n Best wishes,\n AgasOwn Marketing Team \n "
 
         send_mail(
             subject='Agas Own Successful Payment',
@@ -211,7 +211,7 @@ class StripSofort(APIView):
             confirm_payment = stripe.PaymentIntent.confirm(
                 payment_intent["id"],
                 payment_method=payment_intent["payment_method"],
-                return_url="http://localhost:8000/stripe/sofort/"
+                return_url="http://64.227.115.243:8080/stripe/sofort/"
             )
             url = confirm_payment["next_action"]
             check_url = url["redirect_to_url"]
