@@ -53,8 +53,8 @@ class Paypal(APIView):
             "payer": {
                 "payment_method": "paypal"},
             "redirect_urls": {
-                "return_url": "http://localhost:8000/paypal/payment/",
-                "cancel_url": "http://localhost:8000/"},
+                "return_url": "http://64.227.115.243:8080/paypal/payment/",
+                "cancel_url": "http://64.227.115.243:8080/"},
             "transactions": [{
                 "item_list": {
                     "items": [{
@@ -75,3 +75,4 @@ class Paypal(APIView):
                     return HttpResponse({approval_url})
         else:
             return JsonResponse({"error": payment.error}, status=400)
+
