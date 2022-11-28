@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from bson import ObjectId
 from rest_framework.views import APIView
+from django.db import connection
 
 from odata.models import (
     Payment,
@@ -102,6 +103,7 @@ class NewsLetterViewSet(viewsets.ModelViewSet):
     # permission_classes = [IsAuthenticated]
 
     def get_object(self):
+        
         return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
 
 
