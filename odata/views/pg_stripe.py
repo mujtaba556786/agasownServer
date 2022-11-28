@@ -61,6 +61,8 @@ class StripeCard(APIView):
         exp_month = data.get("exp_month")
         exp_year = data.get("exp_year")
         cvc = data.get("cvc")
+        amount=data.get("amount")
+        currency=data.get("currency")
         # descript = data.get("descript")
 
         card = {
@@ -70,6 +72,7 @@ class StripeCard(APIView):
             "cvc": cvc,
         }
         try:
+            amount=int(amount)*100
             payment_method = create_payment_method(card)
             create_customer = stripe.Customer.create(
                 description=data.get(
@@ -90,8 +93,8 @@ class StripeCard(APIView):
                 #     "address": data.get("shipping_address", create_customer["address"])
                 # },
 
-                amount=data.get("amount"),
-                currency=data.get("currency"),
+                amount=amount,
+                currency=currency,
                 payment_method_types=["card"],
                 payment_method=payment_method['id']
             )
@@ -141,7 +144,6 @@ class StripeCard(APIView):
 
 class StripSofort(APIView):
     def get(self, request):
-        print("**reached here")
         payment_id = request.GET["payment_intent"]
         retrieve_customer = stripe.PaymentIntent.retrieve(payment_id)
         total_amount = str(retrieve_customer.amount)
@@ -173,6 +175,7 @@ class StripSofort(APIView):
         country = data.get("country")
 
         try:
+            amount=int(amount)*100
             payment_method = stripe.PaymentMethod.create(
                 type="sofort",
                 sofort={
