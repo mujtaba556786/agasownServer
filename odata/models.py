@@ -89,6 +89,7 @@ class Customer(models.Model):
     source = models.CharField(max_length=100, null=True, blank=True)
     # wishlist = ArrayField(models.CharField(max_length=120), null=True) #added latest
     wishlist = models.TextField(null=True)
+    checkout = models.TextField(null=True)
     medium = models.CharField(max_length=100, null=True, blank=True)
     gcustid = models.CharField(max_length=512, null=True, blank=True)
     gclid = models.CharField(max_length=1024, null=True, blank=True)

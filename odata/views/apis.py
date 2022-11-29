@@ -100,10 +100,10 @@ class NewsLetterViewSet(viewsets.ModelViewSet):
 
     queryset = NewsletterSubscription.objects.all()
     serializer_class = NewsLetterSerializers
+
     # permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        
         return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
 
 
@@ -228,4 +228,65 @@ class ProductVariants(generics.GenericAPIView):
                 product.save()
 
         return JsonResponse({"message": "Product Variant added successfully"},
+                            status=200)
+
+
+class Checkout(generics.GenericAPIView):
+    def patch(self, request):
+        customer_id = request.data["customer_id"]
+        product_id = request.data["product_id"]
+        cus_objInstance = ObjectId(customer_id)
+        product_objInstance = ObjectId(product_id)
+        if Customer.objects.filter(_id=cus_objInstance):
+            customer = Customer.objects.get(_id=cus_objInstance)
+            if Product.objects.filter(_id=product_objInstance):
+                customer_checkout = str(customer.checkout).split(",")
+                if product_id in customer_checkout:
+                    return JsonResponse({"message": "Product already exists"},
+                                        status=400)
+                else:
+                    checkout = customer.checkout
+                    checkout = f"{checkout},{product_id}" if checkout else f"{product_id}"
+                    customer.checkout = checkout
+                    customer.save()
+            else:
+                return JsonResponse({"message": "Product doesn't exists"},
+                                    status=400)
+        else:
+            return JsonResponse({"message": "Customer doesn't exists"},
+                                status=400)
+
+        return JsonResponse({"message": "Added Successfully"},
+                            status=200)
+
+
+class DeleteCheckout(generics.GenericAPIView):
+    def delete(self, request):
+        customer_id = request.data["customer_id"]
+        product_id = request.data["product_id"]
+
+        cus_objInstance = ObjectId(customer_id)
+        product_objInstance = ObjectId(product_id)
+
+        if Customer.objects.filter(_id=cus_objInstance):
+            customer = Customer.objects.get(_id=cus_objInstance)
+            if Product.objects.filter(_id=product_objInstance):
+                if customer.checkout:
+                    customer_checkout = customer.checkout.split(',')
+                    if product_id in customer_checkout:
+                        customer_checkout.remove(product_id)
+                        customer.checkout = ",".join(customer_checkout)
+                    else:
+                        return JsonResponse({"message": "Product_id doesn't exists in checkout_session"},
+                                            status=400)
+                else:
+                    return JsonResponse({"message": "Checkout is empty"}, status=200)
+            else:
+                return JsonResponse({"message": "Product_id doesn't exists"},
+                                    status=400)
+        else:
+            return JsonResponse({"message": "Customer doesn't exists"},
+                                status=400)
+        customer.save()
+        return JsonResponse({"message": "Deleted Successfully"},
                             status=200)
