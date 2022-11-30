@@ -62,8 +62,11 @@ class StripeCard(APIView):
         exp_year = data.get("exp_year")
         cvc = data.get("cvc")
         amount=data.get("amount")
+        # print(type(amount))
         currency=data.get("currency")
-        # descript = data.get("descript")
+        name = data.get("name", "")
+        email = data.get("email", "")
+        description = data.get("descript")
 
         card = {
             "number": card_number,
@@ -72,13 +75,13 @@ class StripeCard(APIView):
             "cvc": cvc,
         }
         try:
-            amount=int(amount)*100
+
+            amount = int(float(amount) * 100)
             payment_method = create_payment_method(card)
             create_customer = stripe.Customer.create(
-                description=data.get(
-                    "customer_description", "Customer Default Description"),
-                name=data.get("name", ""),
-                email=data.get("email", ""),
+                description=description,
+                name=name,
+                email=email,
                 # address=data.get("address", ""),
                 payment_method=payment_method['id']
             )
@@ -100,8 +103,10 @@ class StripeCard(APIView):
             )
 
             intent = stripe.PaymentIntent.confirm(
-                intent_create['id']
+                intent_create['id'],
+                # receipt_email=email,
             )
+
         except stripe.error.CardError as e:
             return response.Response(
                 {"msg": e.user_message},
@@ -175,7 +180,7 @@ class StripSofort(APIView):
         country = data.get("country")
 
         try:
-            amount=int(amount)*100
+            amount = int(float(amount) * 100)
             payment_method = stripe.PaymentMethod.create(
                 type="sofort",
                 sofort={
