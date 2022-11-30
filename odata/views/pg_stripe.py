@@ -1,5 +1,5 @@
 """Handle Stripe Payment Gateway"""
-
+import pdb
 # python imports
 from distutils.log import error
 from locale import currency
@@ -165,7 +165,7 @@ class StripSofort(APIView):
             from_email=EMAIL_HOST_USER,
             recipient_list=[customer_email],
             fail_silently=False)
-        return redirect("http://localhost:8080/index.html#/payment",
+        return redirect("http://64.227.115.243/index.html#/payment",
                         status=200)
 
     def post(self, request):
@@ -178,7 +178,8 @@ class StripSofort(APIView):
         amount = data.get("amount")
         currency = data.get("currency")
         country = data.get("country")
-        description= data.het("description")
+        description = data.get("description")
+
 
         try:
             amount = int(float(amount) * 100)

@@ -35,7 +35,7 @@ class Paypal(APIView):
                 recipient_list=[email],
                 fail_silently=False)
 
-            return redirect("http://localhost:8080/index.html#/payment",
+            return redirect("http://64.227.115.243/index.html#/payment",
                             status=200)
 
         else:
