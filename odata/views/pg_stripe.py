@@ -178,6 +178,7 @@ class StripSofort(APIView):
         amount = data.get("amount")
         currency = data.get("currency")
         country = data.get("country")
+        description= data.het("description")
 
         try:
             amount = int(float(amount) * 100)
@@ -208,7 +209,7 @@ class StripSofort(APIView):
             )
 
             payment_intent = stripe.PaymentIntent.create(
-                description="Payment with sofort",
+                description=description,
                 amount=amount,
                 currency=currency,
                 customer=customer["id"],
