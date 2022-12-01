@@ -5,6 +5,7 @@ from django.core.mail import send_mail
 from Project.settings import EMAIL_HOST_USER
 from django.shortcuts import redirect
 # import logging
+from odata.utility.send_receipt_mail import send_mail_paypal
 from Project.settings import PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET
 
 paypalrestsdk.configure({
@@ -26,14 +27,11 @@ class Paypal(APIView):
             quantity = str(payment.transactions[0].item_list.items[0].quantity)
             total_amount = str(payment.transactions[0].amount.total)
             email = payment.payer.payer_info.email
+            first_name = payment.payer.payer_info.first_name
+            last_name = payment.payer.payer_info.last_name
 
-            email_body = "Hello ,\n Here is your Order Summary: \n Order Details\n Product Name:" + product_name + "\n Product Quantity:" + quantity + "\n Product Price:" + price + "\n Total Amount to Pay:" + total_amount + "\n Mode of payment: PayPal Payment Gateway \n Your order will be delivered within 3 working days.\n You will receive an email shortly after it's dispatched.\n Best wishes,\n AgasOwn Marketing Team \n "
-            send_mail(
-                subject='Payment Successful for PayPal',
-                message=email_body,
-                from_email=EMAIL_HOST_USER,
-                recipient_list=[email],
-                fail_silently=False)
+            send_mail_paypal(first_name=first_name, last_name=last_name, price=price, quantity=quantity,
+                             total_amount=total_amount, email=email, product_name=product_name)
 
             return redirect("http://64.227.115.243/index.html#/payment",
                             status=200)
@@ -53,8 +51,8 @@ class Paypal(APIView):
             "payer": {
                 "payment_method": "paypal"},
             "redirect_urls": {
-                "return_url": "http://64.227.115.243:8080/paypal/payment/",
-                "cancel_url": "http://64.227.115.243:8080/"},
+                "return_url": "http://127.0.0.1:8000/paypal/payment/",
+                "cancel_url": "http://127.0.0.1:8000/"},
             "transactions": [{
                 "item_list": {
                     "items": [{
@@ -75,4 +73,3 @@ class Paypal(APIView):
                     return HttpResponse({approval_url})
         else:
             return JsonResponse({"error": payment.error}, status=400)
-

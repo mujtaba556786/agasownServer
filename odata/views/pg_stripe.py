@@ -17,7 +17,7 @@ from rest_framework.views import APIView
 from rest_framework import status, response
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
-
+from odata.utility.send_receipt_mail import send_mail_card, send_mail_sofort
 from django.http.response import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 # import sofort
@@ -43,17 +43,7 @@ class StipeCheckoutSession(TemplateView):
         return context
 
 
-def create_payment_method(card_data):
-    payment_method = stripe.PaymentMethod.create(
-        type="card",
-        card=card_data
-    )
-    return payment_method
-
-
 # API for credit_cards payment
-
-
 class StripeCard(APIView):
     def post(self, request, format=None):
         data = request.POST.dict()
@@ -61,40 +51,61 @@ class StripeCard(APIView):
         exp_month = data.get("exp_month")
         exp_year = data.get("exp_year")
         cvc = data.get("cvc")
-        amount=data.get("amount")
-        # print(type(amount))
-        currency=data.get("currency")
+        amount = data.get("amount")
+        currency = data.get("currency")
         name = data.get("name", "")
         email = data.get("email", "")
-        description = data.get("descript")
+        cus_add_line1 = data.get("cus_add_line1")
+        cus_add_city = data.get("cus_add_city")
+        cus_add_state = data.get("cus_add_state")
+        postal_code = data.get("postal_code")
+        country = data.get("country")
+        description = data.get("description")
 
-        card = {
-            "number": card_number,
-            "exp_month": exp_month,
-            "exp_year": exp_year,
-            "cvc": cvc,
-        }
         try:
-
             amount = int(float(amount) * 100)
-            payment_method = create_payment_method(card)
+            payment_method = stripe.PaymentMethod.create(
+                type="card",
+                card={
+                    "number": card_number,
+                    "exp_month": exp_month,
+                    "exp_year": exp_year,
+                    "cvc": cvc,
+                },
+                billing_details={
+                    "name": "Agasown",
+                    "address": {
+                        "line1": "Bergmannstraße 13",
+                        "city": "Berlin",
+                        "state": "Germany",
+                    }
+                }
+            )
             create_customer = stripe.Customer.create(
                 description=description,
                 name=name,
                 email=email,
-                # address=data.get("address", ""),
-                payment_method=payment_method['id']
+                address={
+                    "line1": cus_add_line1,
+                    "city": cus_add_city,
+                    "state": cus_add_state,
+                    "country": country,
+                    "postal_code": postal_code,
+                },
+                payment_method=payment_method['id'],
             )
 
             intent_create = stripe.PaymentIntent.create(
                 customer=create_customer['id'],
-                # description = descript,
-                description=data.get(
-                    "description", "Payment Intent Default Description"),
-                # shipping={
-                #     "name": data.get("shipping_name", create_customer["name"]),
-                #     "address": data.get("shipping_address", create_customer["address"])
-                # },
+                description=description,
+                shipping={
+                    "name": "Agasown",
+                    "address": {
+                        "line1": "Bergmannstraße 13",
+                        "city": "Berlin",
+                        "state": "Germany",
+                    }
+                },
 
                 amount=amount,
                 currency=currency,
@@ -104,7 +115,19 @@ class StripeCard(APIView):
 
             intent = stripe.PaymentIntent.confirm(
                 intent_create['id'],
-                # receipt_email=email,
+            )
+            retrieve = stripe.PaymentIntent.retrieve(
+                intent['id'],
+            )
+            payment_method_type = retrieve.charges.data[0].payment_method_details.type
+            card_brand = retrieve.charges.data[0].payment_method_details.card.brand
+            last_digits = retrieve.charges.data[0].payment_method_details.card.last4
+            card_type = retrieve.charges.data[0].payment_method_details.card.funding
+            receipt_url = retrieve.charges.data[0].receipt_url
+            send_mail_card(
+                customer_email=email, retrieve_url=receipt_url, name=name,
+                payment_method_type=payment_method_type, card_brand=card_brand, last_digits=last_digits,
+                card_type=card_type
             )
 
         except stripe.error.CardError as e:
@@ -140,31 +163,25 @@ class StripeCard(APIView):
         except Exception as e:
             return HttpResponse(e)
 
-        retrieve = stripe.PaymentIntent.retrieve(
-            intent_create['id'],
-        )
-
-        return HttpResponse("payment Successful")
+        return HttpResponse("Payment Successful")
 
 
 class StripSofort(APIView):
     def get(self, request):
         payment_id = request.GET["payment_intent"]
         retrieve_customer = stripe.PaymentIntent.retrieve(payment_id)
-        total_amount = str(retrieve_customer.amount)
-        currency = str(retrieve_customer.currency)
+        bank_code = retrieve_customer.charges.data[0].payment_method_details.sofort.bank_code
+        bank_name = retrieve_customer.charges.data[0].payment_method_details.sofort.bank_name
+        payment_type = retrieve_customer.charges.data[0].payment_method_details.type
+        last_digits = retrieve_customer.charges.data[0].payment_method_details.sofort.iban_last4
         customer_id = retrieve_customer.customer
         cus_detials = stripe.Customer.retrieve(customer_id)
-        cus_name = cus_detials.name
+        customer_name = cus_detials.name
         customer_email = cus_detials.email
-        email_body = "Hello " + cus_name + "\n Thank you for making the payment \n We have received your payment of amount " + currency + total_amount + "\n Mode of payment: Bank Transfer \nYour order will be delivered within 3 working days.\n You will receive an email shortly after it's dispatched.\n Best wishes,\n AgasOwn Marketing Team \n "
 
-        send_mail(
-            subject='Agas Own Successful Payment',
-            message=email_body,
-            from_email=EMAIL_HOST_USER,
-            recipient_list=[customer_email],
-            fail_silently=False)
+        send_mail_sofort(customer_email=customer_email, customer_name=customer_name,
+                         bank_name=bank_name, bank_code=bank_code, payment_type=payment_type, last_digits=last_digits)
+
         return redirect("http://64.227.115.243/index.html#/payment",
                         status=200)
 
@@ -175,14 +192,14 @@ class StripSofort(APIView):
         cus_add_line1 = data.get("cus_add_line1")
         cus_add_city = data.get("cus_add_city")
         cus_add_state = data.get("cus_add_state")
-        amount = data.get("amount")
+        amount = float(data.get("amount"))
         currency = data.get("currency")
         country = data.get("country")
+        postal_code = data.get("postal_code")
         description = data.get("description")
 
-
         try:
-            amount = int(float(amount) * 100)
+            amount = int(amount * 100)
             payment_method = stripe.PaymentMethod.create(
                 type="sofort",
                 sofort={
@@ -198,6 +215,8 @@ class StripSofort(APIView):
                     "line1": cus_add_line1,
                     "city": cus_add_city,
                     "state": cus_add_state,
+                    "country": country,
+                    "postal_code": postal_code,
                 },
                 shipping={
                     "name": "Agasown",
@@ -216,13 +235,16 @@ class StripSofort(APIView):
                 customer=customer["id"],
                 payment_method=payment_method["id"],
                 payment_method_types=["sofort"],
+
             )
 
             confirm_payment = stripe.PaymentIntent.confirm(
                 payment_intent["id"],
                 payment_method=payment_intent["payment_method"],
-                return_url="http://64.227.115.243:8080/stripe/sofort/"
+                return_url="http://127.0.0.1:8000/stripe/sofort/",
+                receipt_email=email,
             )
+
             url = confirm_payment["next_action"]
             check_url = url["redirect_to_url"]
             authenticate_url = check_url["url"]
