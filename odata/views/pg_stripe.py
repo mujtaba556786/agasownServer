@@ -241,7 +241,7 @@ class StripSofort(APIView):
             confirm_payment = stripe.PaymentIntent.confirm(
                 payment_intent["id"],
                 payment_method=payment_intent["payment_method"],
-                return_url="http://127.0.0.1:8000/stripe/sofort/",
+                return_url="http://64.227.115.243/stripe/sofort/",
                 receipt_email=email,
             )
 
