@@ -51,7 +51,7 @@ class Paypal(APIView):
             "payer": {
                 "payment_method": "paypal"},
             "redirect_urls": {
-                "return_url": "http://64.227.115.243/paypal/payment/",
+                "return_url": "http://64.227.115.243:8080/paypal/payment/",
                 "cancel_url": "http://64.227.115.243/"},
             "transactions": [{
                 "item_list": {
