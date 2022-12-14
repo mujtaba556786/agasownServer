@@ -25,7 +25,8 @@ SECRET_KEY = 'c1v1#1svq(s5%ogm2(re@1*efk+hd5!#xag(0ijpjm@%c$vv51'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['64.227.115.243:8080','www.aoandu.de','aoandu.de']
+ALLOWED_HOSTS = ['64.227.115.243','64.227.115.243:8080','www.aoandu.de','aoandu.de']
+
 
 
 # Application definition
@@ -233,10 +234,6 @@ DATABASES = {
     }
 }
 
-
-# Password validation
-# https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -253,11 +250,12 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST = 'smtp.outlook.com'
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'test@gmail.com'
-EMAIL_HOST_PASSWORD = 'test123'
+EMAIL_HOST_USER = 'support@agasown.de'
+EMAIL_HOST_PASSWORD = 'Xrs6dE#-JxFm$Cu'
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.0/topics/i18n/
