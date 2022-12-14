@@ -1,18 +1,15 @@
 """Handle Stripe Payment Gateway"""
-import pdb
-# python imports
 from distutils.log import error
 from locale import currency
 import os
 import json
 from webbrowser import get
-# from responses import Response
-
 # # Third Party import
 import stripe
 from django.conf import settings
 from django.core.mail import send_mail
 from django.shortcuts import redirect
+from odata.models import Payment
 from rest_framework.views import APIView
 from rest_framework import status, response
 from django.views.generic import TemplateView
@@ -20,11 +17,10 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from odata.utility.send_receipt_mail import send_mail_card, send_mail_sofort
 from django.http.response import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
-# import sofort
-
-# local import
 from odata.models import Product, Payment, Customer
-from Project.settings import STRIPE_SECRET_KEY, STRIPE_PUBLISH_KEY, DOMAIN_URL, EMAIL_HOST_USER
+from Project.settings import STRIPE_SECRET_KEY, STRIPE_PUBLISH_KEY, DOMAIN_URL
+from bson import ObjectId
+from datetime import datetime
 
 stripe.api_key = STRIPE_SECRET_KEY
 
@@ -45,13 +41,14 @@ class StipeCheckoutSession(TemplateView):
 
 # API for credit_cards payment
 class StripeCard(APIView):
-    def post(self, request, format=None):
+    def post(self, request):
+        # import pdb; pdb.set_trace()
         data = request.POST.dict()
         card_number = data.get("card_number")
         exp_month = data.get("exp_month")
         exp_year = data.get("exp_year")
         cvc = data.get("cvc")
-        amount = data.get("amount")
+        total_amount = data.get("amount")
         currency = data.get("currency")
         name = data.get("name", "")
         email = data.get("email", "")
@@ -61,131 +58,161 @@ class StripeCard(APIView):
         postal_code = data.get("postal_code")
         country = data.get("country")
         description = data.get("description")
+        customer_id = data.get("customer_id")
 
-        try:
-            amount = int(float(amount) * 100)
-            payment_method = stripe.PaymentMethod.create(
-                type="card",
-                card={
-                    "number": card_number,
-                    "exp_month": exp_month,
-                    "exp_year": exp_year,
-                    "cvc": cvc,
-                },
-                billing_details={
-                    "name": "Agasown",
-                    "address": {
-                        "line1": "Bergmannstraße 13",
-                        "city": "Berlin",
-                        "state": "Germany",
+        cus_objInstance = ObjectId(customer_id)
+        customer = Customer.objects.get(_id=cus_objInstance)
+
+        if not customer:
+            return HttpResponse("Customer doesn't exists")
+        else:
+            try:
+                amount = int(float(total_amount) * 100)
+                payment_method = stripe.PaymentMethod.create(
+                    type="card",
+                    card={
+                        "number": card_number,
+                        "exp_month": exp_month,
+                        "exp_year": exp_year,
+                        "cvc": cvc,
+                    },
+                    billing_details={
+                        "name": "Agasown",
+                        "address": {
+                            "line1": "Bergmannstraße 13",
+                            "city": "Berlin",
+                            "state": "Germany",
+                        }
                     }
-                }
-            )
-            create_customer = stripe.Customer.create(
-                description=description,
-                name=name,
-                email=email,
-                address={
-                    "line1": cus_add_line1,
-                    "city": cus_add_city,
-                    "state": cus_add_state,
-                    "country": country,
-                    "postal_code": postal_code,
-                },
-                payment_method=payment_method['id'],
-            )
+                )
+                create_customer = stripe.Customer.create(
+                    description=description,
+                    name=name,
+                    email=email,
+                    address={
+                        "line1": cus_add_line1,
+                        "city": cus_add_city,
+                        "state": cus_add_state,
+                        "country": country,
+                        "postal_code": postal_code,
+                    },
+                    payment_method=payment_method['id'],
+                )
 
-            intent_create = stripe.PaymentIntent.create(
-                customer=create_customer['id'],
-                description=description,
-                shipping={
-                    "name": "Agasown",
-                    "address": {
-                        "line1": "Bergmannstraße 13",
-                        "city": "Berlin",
-                        "state": "Germany",
-                    }
-                },
+                intent_create = stripe.PaymentIntent.create(
+                    customer=create_customer['id'],
+                    description=description,
+                    shipping={
+                        "name": "Agasown",
+                        "address": {
+                            "line1": "Bergmannstraße 13",
+                            "city": "Berlin",
+                            "state": "Germany",
+                        }
+                    },
 
-                amount=amount,
-                currency=currency,
-                payment_method_types=["card"],
-                payment_method=payment_method['id']
-            )
+                    amount=amount,
+                    currency=currency,
+                    payment_method_types=["card"],
+                    payment_method=payment_method['id']
+                )
 
-            intent = stripe.PaymentIntent.confirm(
-                intent_create['id'],
-            )
-            retrieve = stripe.PaymentIntent.retrieve(
-                intent['id'],
-            )
-            payment_method_type = retrieve.charges.data[0].payment_method_details.type
-            card_brand = retrieve.charges.data[0].payment_method_details.card.brand
-            last_digits = retrieve.charges.data[0].payment_method_details.card.last4
-            card_type = retrieve.charges.data[0].payment_method_details.card.funding
-            receipt_url = retrieve.charges.data[0].receipt_url
-            send_mail_card(
-                customer_email=email, retrieve_url=receipt_url, name=name,
-                payment_method_type=payment_method_type, card_brand=card_brand, last_digits=last_digits,
-                card_type=card_type
-            )
+                intent = stripe.PaymentIntent.confirm(
+                    intent_create['id'],
+                )
+                retrieve = stripe.PaymentIntent.retrieve(
+                    intent['id'],
+                )
+                payment_method_type = retrieve.charges.data[0].payment_method_details.type
+                card_brand = retrieve.charges.data[0].payment_method_details.card.brand
+                last_digits = retrieve.charges.data[0].payment_method_details.card.last4
+                card_type = retrieve.charges.data[0].payment_method_details.card.funding
+                receipt_url = retrieve.charges.data[0].receipt_url
+                date_of_payment = datetime.fromtimestamp(retrieve.charges.data[0].created).strftime("%Y-%m-%d")
+                date = datetime.fromtimestamp(retrieve.charges.data[0].created).strftime("%Y%m%d")
+                payment_status = retrieve.charges.data[0].status
+                invoice_count = Payment.objects.count()
+                send_mail_card(
+                    customer_email=email, retrieve_url=receipt_url, name=name,
+                    payment_method_type=payment_method_type, card_brand=card_brand, last_digits=last_digits,
+                    card_type=card_type
+                )
+                payment = Payment(order="AGA", invoice=f"AGASOWN_{date}_{invoice_count}", customer=customer,
+                                  payment_type=payment_method_type, status=payment_status,
+                                  date_of_payment=date_of_payment, amount=total_amount)
+                payment.save()
 
-        except stripe.error.CardError as e:
-            return response.Response(
-                {"msg": e.user_message},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except stripe.error.RateLimitError as e:
-            return response.Response(
-                {"msg": e.user_message},
-                status=status.HTTP_409_CONFLICT,
-            )
-        except stripe.error.InvalidRequestError as e:
-            return response.Response(
-                {"msg": e.user_message},
-                status=status.HTTP_402_PAYMENT_REQUIRED,
-            )
-        except stripe.error.AuthenticationError as e:
-            return response.Response(
-                {"msg": e.user_message},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-        except stripe.error.APIConnectionError as e:
-            return response.Response(
-                {"msg": e.user_message},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-        except stripe.error.StripeError as e:
-            return response.Response(
-                {"msg": e.user_message},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
-        except Exception as e:
-            return HttpResponse(e)
+            except stripe.error.CardError as e:
+                return response.Response(
+                    {"msg": e.user_message},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            except stripe.error.RateLimitError as e:
+                return response.Response(
+                    {"msg": e.user_message},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            except stripe.error.InvalidRequestError as e:
+                return response.Response(
+                    {"msg": e.user_message},
+                    status=status.HTTP_402_PAYMENT_REQUIRED,
+                )
+            except stripe.error.AuthenticationError as e:
+                return response.Response(
+                    {"msg": e.user_message},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
+            except stripe.error.APIConnectionError as e:
+                return response.Response(
+                    {"msg": e.user_message},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                )
+            except stripe.error.StripeError as e:
+                return response.Response(
+                    {"msg": e.user_message},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
+            except Exception as e:
+                return HttpResponse(e)
 
-        return HttpResponse("Payment Successful")
+            return HttpResponse("Payment Successful")
 
 
 class StripSofort(APIView):
     def get(self, request):
         payment_id = request.GET["payment_intent"]
+        customer_id = request.GET['customer_id']
+        customer_objectID = ObjectId(customer_id)
         retrieve_customer = stripe.PaymentIntent.retrieve(payment_id)
         bank_code = retrieve_customer.charges.data[0].payment_method_details.sofort.bank_code
+        amount= retrieve_customer.charges.data[0].amount/100
         bank_name = retrieve_customer.charges.data[0].payment_method_details.sofort.bank_name
         payment_type = retrieve_customer.charges.data[0].payment_method_details.type
         last_digits = retrieve_customer.charges.data[0].payment_method_details.sofort.iban_last4
+        payment_status = retrieve_customer.charges.data[0].status
         customer_id = retrieve_customer.customer
         cus_detials = stripe.Customer.retrieve(customer_id)
         customer_name = cus_detials.name
         customer_email = cus_detials.email
-
+        date_of_payment = datetime.fromtimestamp(cus_detials.created).strftime("%Y-%m-%d")
+        date = datetime.fromtimestamp(cus_detials.created).strftime("%Y%m%d")
+        invoice_count= Payment.objects.count()
         send_mail_sofort(customer_email=customer_email, customer_name=customer_name,
                          bank_name=bank_name, bank_code=bank_code, payment_type=payment_type, last_digits=last_digits)
 
-        return redirect("http://64.227.115.243/index.html#/payment",
-                        status=200)
+        customer = Customer.objects.get(_id=customer_objectID)
+        if not customer:
+            return HttpResponse("Customer doesn't exists")
+        else:
+            payment = Payment(order="AGA", invoice=f"AGASOWN_{date}_{invoice_count}", payment_type=payment_type, customer=customer,
+                              status=payment_status, date_of_payment=date_of_payment,amount=amount)
+            payment.save()
+
+            return redirect("http://64.227.115.243/index.html#/payment",
+                            status=200)
 
     def post(self, request):
+        # import pdb; pdb.set_trace()
         data = request.POST.dict()
         name = data.get("name")
         email = data.get("email")
@@ -197,6 +224,7 @@ class StripSofort(APIView):
         country = data.get("country")
         postal_code = data.get("postal_code")
         description = data.get("description")
+        customer_id = data.get("customer_id")
 
         try:
             amount = int(amount * 100)
@@ -241,10 +269,9 @@ class StripSofort(APIView):
             confirm_payment = stripe.PaymentIntent.confirm(
                 payment_intent["id"],
                 payment_method=payment_intent["payment_method"],
-                return_url="http://64.227.115.243:8080/stripe/sofort/",
+                return_url=f"http://64.227.115.243:8080/stripe/sofort/?customer_id={customer_id}",
                 receipt_email=email,
             )
-
             url = confirm_payment["next_action"]
             check_url = url["redirect_to_url"]
             authenticate_url = check_url["url"]
@@ -264,7 +291,6 @@ class StripSofort(APIView):
                 {"msg": e},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-
         return HttpResponse(f"{authenticate_url}")
 
 

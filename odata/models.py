@@ -11,7 +11,7 @@ from django.dispatch import receiver
 from django.shortcuts import reverse
 from djongo import models
 #18.216.224.202u
-     
+
 Available_Size = (
     ('S', 'small'),
     ('M', 'medium'),
@@ -40,12 +40,12 @@ RANKING = (
     ('promoted', 'Promoted'),
     ('best_seller', 'Best Seller'),
 )
-class Categories(models.Model):    
+class Categories(models.Model):
     objects = models.DjongoManager()
     _id = models.ObjectIdField(primary_key=True)
     parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
-    category_name = models.CharField(max_length=100,null=True,blank=True)  
-    category_name_de = models.CharField(max_length=100,null=True,blank=True)  
+    category_name = models.CharField(max_length=100,null=True,blank=True)
+    category_name_de = models.CharField(max_length=100,null=True,blank=True)
     # picture = models.ImageField(null=True,blank=True, upload_to="images")
     picture = models.CharField(max_length=1000, null=True, blank=True)
     active = models.BooleanField(default=False)
@@ -54,16 +54,16 @@ class Categories(models.Model):
 
     def __str__(self):
         return self.category_name or ''
-    
+
     class Meta:
         db_table = 'odata_category'
 
 class Customer(models.Model):
-    """This model is used for customer"""    
+    """This model is used for customer"""
     _id = models.ObjectIdField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=100,null=True,blank=True)
-    last_name = models.CharField(max_length=100,null=True,blank=True)    
+    last_name = models.CharField(max_length=100,null=True,blank=True)
     address1 = models.CharField(max_length=100,null=True,blank=True)
     address2 = models.CharField(max_length=100,null=True,blank=True)
     city = models.CharField(max_length=100,null=True,blank=True)
@@ -77,7 +77,7 @@ class Customer(models.Model):
     credit_card_type_id = models.CharField(max_length=100)
     mm_yy = models.CharField(max_length=7, null=True, blank=True)
     billing_address = models.CharField(max_length=250, null=True,blank=True)
-    billing_city = models.CharField(max_length=100, null=True,blank=True)    
+    billing_city = models.CharField(max_length=100, null=True,blank=True)
     billing_postal_code = models.CharField(max_length=100, null=True,blank=True)
     billing_country = models.CharField(max_length=100, null=True,blank=True)
     ship_address = models.CharField(max_length=250, null=True,blank=True)
@@ -108,7 +108,7 @@ class Customer(models.Model):
             return self.first_name
         else:
             return ''
-    
+
     @classmethod
     def get(cls, email):
         try:
@@ -134,25 +134,25 @@ class UserForgotPassword(models.Model):
 # @receiver(post_save, sender=User)
 # def save_user_customer(sender, instance, **kwargs):
 #     instance.customer.save()
-    
 
-    
+
+
 class Product(models.Model):
-    """This models is used for Products Details."""        
-    _id = models.ObjectIdField(primary_key=True)        
+    """This models is used for Products Details."""
+    _id = models.ObjectIdField(primary_key=True)
     vendor_product_id = models.CharField(max_length=50,null=True,blank=True)
-    product_name = models.CharField(max_length=100)    
+    product_name = models.CharField(max_length=100)
     category = models.CharField(max_length=250, default='')
     quantity = models.IntegerField(default=0)
     price = models.FloatField()
     msrp = models.CharField(max_length=100, null=True,blank=True)
     ean = models.CharField(max_length=255, null=True, blank=True)
     title = models.CharField(max_length=1024)
-    title_de = models.CharField(max_length=1024, blank=True, null=True)    
+    title_de = models.CharField(max_length=1024, blank=True, null=True)
     # size = models.CharField(max_length=100,null=True,blank=True)
     # color = models.CharField(max_length=100,null=True,blank=True)
     discount = models.DecimalField(decimal_places=2, max_digits=10, verbose_name="Discount %")
-    product_available = models.BooleanField(default=False)        
+    product_available = models.BooleanField(default=False)
     picture = models.URLField(null=True,blank=True)
     ranking = models.CharField(max_length=15,choices=RANKING, null=True,blank=True)
     description = models.TextField(max_length=500, null=True,blank=True)
@@ -165,11 +165,11 @@ class Product(models.Model):
 
     def __str__(self):
         return self.product_name or ' '
-    
+
     def get_absolute_url(self):
         return reverse("products", args=[str(self.id)])
 
-    @classmethod    
+    @classmethod
     def get(cls, pro_id):
         from bson import ObjectId
         try:
@@ -185,7 +185,7 @@ class ProductImage(models.Model):
     image = models.URLField(null=True,blank=True)
     created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
-    
+
 
 class ProductVariant(models.Model):
     _id = models.ObjectIdField(primary_key=True)
@@ -195,7 +195,7 @@ class ProductVariant(models.Model):
     material = models.CharField(max_length=100)
     ean = models.CharField(max_length=100, null=True)
     image = models.URLField(null=True, blank=True)
-    
+
 # class Shipper(models.Model):
 #     _id = models.ObjectIdField(primary_key=True)
 #     company_name = models.CharField(max_length=100)
@@ -239,7 +239,15 @@ class Payment(models.Model):
     created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
 
-    
+    def __int__(self, customer, order, invoice, amount, payment_type, status, date_of_payment):
+        self.customer = customer
+        self.order = order
+        self.invoice = invoice
+        self.amount = amount
+        self.payment_type = payment_type
+        self.status = status
+        self.date_of_payment = date_of_payment
+
 # class OrderDetail(models.Model):
 #     _id = models.ObjectIdField(primary_key=True)
 #     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING)
@@ -257,10 +265,10 @@ class Payment(models.Model):
 #     bill_date = models.DateField(default='')    
 #     created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
 #     updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
-    
+
 #     def __str__(self):
 #         return self.order.order_number
-    
+
 class NewsletterSubscription(models.Model):
     _id = models.ObjectIdField(primary_key=True)
     salutation = models.CharField(max_length=3)
