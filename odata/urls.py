@@ -1,11 +1,10 @@
 from django.conf.urls import url
-
 from .sitemaps import *
 from django.conf.urls.static import static
 from django.conf import settings
 from django.contrib.sitemaps.views import sitemap
 from django.urls import path, include
-
+from . import views
 from rest_framework import routers
 from rest_framework.routers import SimpleRouter, Route
 from odata.views.apis import (
@@ -19,6 +18,8 @@ from odata.views.apis import (
     ProductVariants,
     Checkout,
     DeleteCheckout,
+    GuestLogin,
+    google_login
 )
 from odata.views.accounts import (
     LoginViewSet,
@@ -106,6 +107,7 @@ router.register(r"category", CategoryViewSet),
 router.register(r"login", LoginViewSet, basename="login")
 router.register(r"logout", LogoutViewSet, basename="logout")
 router.register(r"sign-up", SignupViewSet, basename="sign-up")
+
 # router.register(
 #     r"forgot-password", UserForgotPasswordViewSet, basename="request-reset-email"
 # )
@@ -140,4 +142,7 @@ urlpatterns = [
                   path('product/variant', ProductVariants.as_view()),
                   path('checkout/', Checkout.as_view()),
                   path('delete/checkout/', DeleteCheckout.as_view()),
+                  path('google-login/', google_login, name="google_login"),
+                  path('guest_login/', GuestLogin.as_view(), name="guest_login")
+
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

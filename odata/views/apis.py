@@ -1,11 +1,20 @@
+from django.contrib.auth.models import User
+from django.contrib.sites import requests
 from django.http import HttpResponse, JsonResponse
 from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from bson import ObjectId
+from rest_framework.reverse import reverse
 from rest_framework.views import APIView
 from django.db import connection
+from Project.settings import GP_CLIENT_ID,GP_CLIENT_SECRET
+from datetime import datetime
+from urllib.parse import urlencode
+from django.conf import settings
+from django.contrib import messages
+
 
 from odata.models import (
     Payment,
@@ -290,3 +299,74 @@ class DeleteCheckout(generics.GenericAPIView):
         customer.save()
         return JsonResponse({"message": "Deleted Successfully"},
                             status=200)
+
+
+class GuestLogin(generics.GenericAPIView):
+    def post(self, request):
+        # import pdb; pdb.set_trace()
+        first_name = request.data["first_name"]
+        last_name = request.data["last_name"]
+        email = request.data["email"]
+
+        try:
+            user_count = User.objects.count()
+            username = f"GUEST_{first_name}{last_name}_{user_count}"
+            user = User.objects.create(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                username=username,
+            )
+            customer = Customer.objects.create(user=user)
+            customer.save()
+            return JsonResponse({"message": "Successfully Logged"}, status=200)
+        except Exception as e:
+            return JsonResponse({"message": str(e)}, status=500)
+
+
+def google_login(request):
+    redirect_uri = "%s://%s%s" % (
+        request.scheme, request.get_host(), reverse('google_login')
+    )
+
+    if 'code' in request.GET:
+        params = {
+            'grant_type': 'authorization_code',
+            'code': request.GET.get('code'),
+            'redirect_uri': redirect_uri,
+            'client_id': GP_CLIENT_ID,
+            'client_secret': GP_CLIENT_SECRET
+        }
+        url = 'https://accounts.google.com/o/oauth2/token'
+        response = requests.post(url, data=params)
+
+        url = 'https://www.googleapis.com/oauth2/v1/userinfo'
+        access_token = response.json().get('access_token')
+        response = requests.get(url, params={'access_token': access_token})
+        user_data = response.json()
+        email = user_data.get('email')
+        first_name = user_data.get('given_name')
+        last_name = user_data.get("family_name")
+        try:
+            user_count = User.objects.count()
+            username = f"GOOGLE_{first_name}{last_name}_{user_count}"
+            user = User.objects.create(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                username=username,
+            )
+            customer = Customer.objects.create(user=user)
+            customer.save()
+            return redirect('/')
+        except Exception as e:
+            return JsonResponse({"message": e}, status=400)
+    else:
+        url = "https://accounts.google.com/o/oauth2/auth?client_id=%s&response_type=code&scope=%s&redirect_uri=%s&state=google"
+        scope = [
+            "https://www.googleapis.com/auth/userinfo.profile",
+            "https://www.googleapis.com/auth/userinfo.email"
+        ]
+        scope = " ".join(scope)
+        url = url % (GP_CLIENT_ID, scope, redirect_uri)
+        return redirect(url)

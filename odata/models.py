@@ -64,6 +64,7 @@ class Customer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     first_name = models.CharField(max_length=100,null=True,blank=True)
     last_name = models.CharField(max_length=100,null=True,blank=True)
+    email = models.EmailField(max_length=254, null=True, blank=True, default=True)
     address1 = models.CharField(max_length=100,null=True,blank=True)
     address2 = models.CharField(max_length=100,null=True,blank=True)
     city = models.CharField(max_length=100,null=True,blank=True)

@@ -25,8 +25,9 @@ SECRET_KEY = 'c1v1#1svq(s5%ogm2(re@1*efk+hd5!#xag(0ijpjm@%c$vv51'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['64.227.115.243','64.227.115.243:8080','www.aoandu.de','aoandu.de']
+# ALLOWED_HOSTS = ['64.227.115.243','64.227.115.243:8080','www.aoandu.de','aoandu.de']
 
+ALLOWED_HOSTS =['*']
 
 
 # Application definition
@@ -298,4 +299,6 @@ STRIPE_PUBLISH_KEY = "pk_test_51IXYUpLKVJco8g7ExbIbUxKhXGZSLgMgE1UE922q1fP54VAfw
 STRIPE_SECRET_KEY = "sk_test_51IXYUpLKVJco8g7Em855AyduHVR4incHWz2fAZBGuhNRvByUrTvOe6wCaS3mzGlg4i2eAvDmGwTtjyHkWDoUojJu00bq0rFiwG"
 PAYPAL_CLIENT_ID = "Aa176Af9rSh-7gDZELoNnJoGTjOpXfo0ECrNw6HjD4633ArdVOw59D4rafyywX887C-N9k_albOUlBiE"
 PAYPAL_CLIENT_SECRET = "EGyQfM4tLnJTszmQcnIF185Br3YUUt2VEyaj9yQrLZeiLqwKUxB5wWeHomsrwSnqJEahIC1TuMbggpse"
+GP_CLIENT_ID = '290970868302-l4v97ob7m07flac3ib06vndugu8ggpfg.apps.googleusercontent.com'
+GP_CLIENT_SECRET = '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'
 DOMAIN_URL = "http://127.0.0.1:8000/"
