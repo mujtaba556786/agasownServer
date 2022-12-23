@@ -1,6 +1,7 @@
+import requests
 from django.contrib.auth.models import User
-from django.contrib.sites import requests
 from django.http import HttpResponse, JsonResponse
+from django.shortcuts import redirect
 from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -251,9 +252,6 @@ class Checkout(generics.GenericAPIView):
             if Product.objects.filter(_id=product_objInstance):
                 customer_checkout = str(customer.checkout).split(",")
                 if product_id in customer_checkout:
-                    return JsonResponse({"message": "Product already exists"},
-                                        status=400)
-                else:
                     checkout = customer.checkout
                     checkout = f"{checkout},{product_id}" if checkout else f"{product_id}"
                     customer.checkout = checkout
