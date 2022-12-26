@@ -301,7 +301,6 @@ class DeleteCheckout(generics.GenericAPIView):
 
 class GuestLogin(generics.GenericAPIView):
     def post(self, request):
-        # import pdb; pdb.set_trace()
         first_name = request.data["first_name"]
         last_name = request.data["last_name"]
         email = request.data["email"]
