@@ -46,7 +46,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializers
 
     def get_object(self):
-        return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
+        return Product.objects.get(_id=ObjectId(self.kwargs.get('pk')))
 
     def get_serializer_context(self):
         context = super(ProductViewSet, self).get_serializer_context()
@@ -96,7 +96,7 @@ class ProductImageViewSet(viewsets.ModelViewSet):
     serializer_class = ProductImageSerializers
 
     def get_object(self):
-        return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
+        return ProductImage.objects.get(_id=ObjectId(self.kwargs.get('pk')))
 
 
 # class ProductVariantViewSet(generics.GenericAPIView):
@@ -114,7 +114,7 @@ class NewsLetterViewSet(viewsets.ModelViewSet):
     # permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
+        return NewsletterSubscription.objects.get(_id=ObjectId(self.kwargs.get('pk')))
 
 
 class CustomerViewSet(viewsets.ModelViewSet):
@@ -126,7 +126,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
     # permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
+        return Customer.objects.get(_id=ObjectId(self.kwargs.get('pk')))
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -136,7 +136,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializers
 
     def get_object(self):
-        return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
+        return Categories.objects.get(_id=ObjectId(self.kwargs.get('pk')))
 
 
 class PaymentViewset(viewsets.ModelViewSet):
@@ -149,7 +149,7 @@ class PaymentViewset(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        return self.model.objects.get(pk=ObjectId(self.kwargs.get('pk')))
+        return Payment.objects.get(_id=ObjectId(self.kwargs.get('pk')))
 
 
 class Wishlist(generics.GenericAPIView):
