@@ -250,7 +250,7 @@ class Payment(models.Model):
         self.date_of_payment = date_of_payment
 
     def __str__(self):
-        return f'{self.customer.first_name} + {self.customer.last_name}'
+        return f'{self.customer.first_name} {self.customer.last_name}'
 
 # class OrderDetail(models.Model):
 #     _id = models.ObjectIdField(primary_key=True)
