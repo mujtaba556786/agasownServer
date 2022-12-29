@@ -301,25 +301,30 @@ class DeleteCheckout(generics.GenericAPIView):
 
 class GuestLogin(generics.GenericAPIView):
     def post(self, request):
-        # import pdb; pdb.set_trace()
         first_name = request.data["first_name"]
         last_name = request.data["last_name"]
         email = request.data["email"]
 
-        try:
-            user_count = User.objects.count()
-            username = f"GUEST_{first_name}{last_name}_{user_count}"
-            user = User.objects.create(
-                first_name=first_name,
-                last_name=last_name,
-                email=email,
-                username=username,
-            )
-            customer = Customer.objects.create(user=user)
-            customer.save()
-            return JsonResponse({"message": "Successfully Logged"}, status=200)
-        except Exception as e:
-            return JsonResponse({"message": str(e)}, status=500)
+        user_email = User.objects.filter(email=email)
+        if user_email:
+            return JsonResponse({"message": "Email_Id already exists"},
+                                status=200)
+        else:
+            try:
+                user_count = User.objects.count()
+                username = f"GUEST_{first_name}{last_name}_{user_count}"
+                user = User.objects.create(
+                    first_name=first_name,
+                    last_name=last_name,
+                    email=email,
+                    username=username,
+                )
+                customer = Customer.objects.create(user=user, first_name=first_name, last_name=last_name,email=email,
+                                                   guest_login=True)
+                customer.save()
+                return JsonResponse({"message": "Successfully Logged"}, status=200)
+            except Exception as e:
+                return JsonResponse({"message": str(e)}, status=500)
 
 
 def google_login(request):
