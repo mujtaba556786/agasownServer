@@ -98,7 +98,7 @@ sitemaps_dict = {
 }
 
 router.register(r"products", ProductViewSet),
-# router.register(r"payments", PaymentViewset),
+router.register(r"payments", PaymentViewset),
 # router.register(r"products/image", ProductImageViewSet),
 # router.register(r"products/variant", ProductVariantViewSet),
 router.register(r"newsletter", NewsLetterViewSet),
