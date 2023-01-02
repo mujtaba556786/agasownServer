@@ -84,34 +84,68 @@ class CustomerSerializers(serializers.ModelSerializer):
     def create(self, validated_data):
         username = validated_data.pop("username")
         email = validated_data.pop("email")
-        # instance = Customer(**validated_data)
         user = User.objects.create(
             first_name=validated_data["first_name"],
             last_name=validated_data["last_name"],
             email=email,
             username=username,
         )
-        customer = Customer.objects.create(user=user)
-        # instance.user = user
-        # instance = Customer.objects.filter(user=user).update(**validated_data)
+        customer = Customer.objects.create(user=user, first_name=validated_data["first_name"],
+                                           last_name=validated_data["last_name"],
+                                           email=email,
+                                           address1=validated_data.get("address1"),
+                                           address2=validated_data.get("address2"),
+                                           city=validated_data.get("city"),
+                                           state=validated_data.get("state"),
+                                           postal_code=validated_data.get("postal_code"),
+                                           country=validated_data.get("country"),
+                                           phone=validated_data.get("phone"),
+                                           password=validated_data.get("password"),
+                                           salutation=validated_data.get("salutation"),
+                                           credit_card=validated_data.get("credit_card"),
+                                           credit_card_type_id=validated_data.get("credit_card_type_id"),
+                                           mm_yy=validated_data.get("mm_yy"),
+                                           billing_address=validated_data.get("billing_address"),
+                                           billing_city=validated_data.get("billing_city"),
+                                           billing_postal_code=validated_data.get("billing_postal_code"),
+                                           billing_country=validated_data.get("billing_country"),
+                                           ship_address=validated_data.get("ship_address"),
+                                           ship_city=validated_data.get("ship_city"),
+                                           ship_region=validated_data.get("ship_region"),
+                                           ship_postal_code=validated_data.get("ship_postal_code"),
+                                           ship_country=validated_data.get("ship_country"),
+                                           marketing_code=validated_data.get("marketing_code"),
+                                           source=validated_data.get("source"),
+                                           wishlist=validated_data.get("wishlist"),
+                                           checkout=validated_data.get("checkout"),
+                                           medium=validated_data.get("medium"),
+                                           gcustid=validated_data.get("gcustid"),
+                                           gclid=validated_data.get("gclid"),
+                                           fbclid=validated_data.get("fbclid"),
+                                           date_entered=validated_data.get("date_entered"),
+                                           terms_condition=validated_data.get("terms_condition"),
+                                           data_privacy=validated_data.get("data_privacy"),
+                                           guest_login=False,
+                                           )
+
         return Customer.objects.get(user=user)
 
     def validate(self, validated_data):
-        username = validated_data["username"]
-        email = validated_data["email"]
-        if User.objects.filter(email=email):
-            raise serializers.ValidationError(
-                {"email": "Email is already registered with us"}
-            )
+        if 'username' in validated_data or 'email' in validated_data:
+            username = validated_data["username"]
+            email = validated_data["email"]
+            if User.objects.filter(email=email):
+                raise serializers.ValidationError(
+                    {"email": "Email is already registered with us"}
+                )
 
-        if User.objects.filter(username=username):
-            raise serializers.ValidationError(
-                {"username": "Username is already registered with us"}
-            )
-
-        # if
-
-        return validated_data
+            if User.objects.filter(username=username):
+                raise serializers.ValidationError(
+                    {"username": "Username is already registered with us"}
+                )
+            return validated_data
+        else:
+            return validated_data
 
     def to_representation(self, instance):
         instance.username = instance.user.username
