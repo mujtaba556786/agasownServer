@@ -75,7 +75,7 @@ class Customer(models.Model):
     password = models.TextField(max_length=100,null=True)
     salutation = models.CharField(max_length=100,null=True,blank=True)
     credit_card = models.CharField(max_length=15, null=True,blank=True)
-    credit_card_type_id = models.CharField(max_length=100)
+    credit_card_type_id = models.CharField(max_length=100,null=True,blank=True,default=True)
     mm_yy = models.CharField(max_length=7, null=True, blank=True)
     billing_address = models.CharField(max_length=250, null=True,blank=True)
     billing_city = models.CharField(max_length=100, null=True,blank=True)
@@ -88,7 +88,6 @@ class Customer(models.Model):
     ship_country = models.CharField(max_length=100, null=True,blank=True)
     marketing_code = models.CharField(max_length=100, null=True, blank=True)
     source = models.CharField(max_length=100, null=True, blank=True)
-    # wishlist = ArrayField(models.CharField(max_length=120), null=True) #added latest
     wishlist = models.TextField(null=True)
     checkout = models.TextField(null=True)
     medium = models.CharField(max_length=100, null=True, blank=True)
