@@ -300,8 +300,6 @@ class DeleteCheckout(generics.GenericAPIView):
 
 class TotalAmount(generics.GenericAPIView):
     def post(self, request):
-        import pdb;
-        pdb.set_trace()
         data = request.data
         customer_id = data.get("customer_id", None)
         quantity = int(data.get("quantity", 0))
