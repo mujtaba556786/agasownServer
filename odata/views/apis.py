@@ -10,12 +10,11 @@ from bson import ObjectId
 from rest_framework.reverse import reverse
 from rest_framework.views import APIView
 from django.db import connection
-from Project.settings import GP_CLIENT_ID,GP_CLIENT_SECRET
+from Project.settings import GP_CLIENT_ID, GP_CLIENT_SECRET
 from datetime import datetime
 from urllib.parse import urlencode
 from django.conf import settings
 from django.contrib import messages
-
 
 from odata.models import (
     Payment,
@@ -299,6 +298,59 @@ class DeleteCheckout(generics.GenericAPIView):
                             status=200)
 
 
+class TotalAmount(generics.GenericAPIView):
+    def post(self, request):
+        import pdb;
+        pdb.set_trace()
+        data = request.data
+        customer_id = data.get("customer_id", None)
+        quantity = int(data.get("quantity", 0))
+        voucher = data.get("voucher", None)
+        discount = data.get("discount", None)
+
+        customer = Customer.objects.get(_id=ObjectId(customer_id))
+        customer_checkout = str(customer.checkout).split(",")
+        total_amount = 0
+        amount = 0
+        num = None
+        if voucher == "" or discount:
+            for i in range(len(discount)):
+                if discount[i].isdigit():
+                    num = discount[i:]
+                    break
+            disc = int(num)
+            for product_id in customer_checkout:
+                product = Product.objects.get(_id=ObjectId(product_id))
+                product_price = product.price
+                amount += product_price * quantity
+                total_amount = ("{:.2f}".format(amount - (amount * (disc / 100))))
+            return JsonResponse({"Total Amount": total_amount}, status=200)
+
+        elif discount == "" or voucher:
+            for i in range(len(voucher)):
+                if voucher[i].isdigit():
+                    num = voucher[i:]
+                    break
+            vouch = int(num)
+            for product_id in customer_checkout:
+                product = Product.objects.get(_id=ObjectId(product_id))
+                product_price = product.price
+                amount += product_price * quantity
+                total_amount = ("{:.2f}".format(amount - (amount * (vouch / 100))))
+            customer.voucher = "expired"
+            customer.save()
+
+            return JsonResponse({"Total Amount": total_amount}, status=200)
+
+        else:
+            for product_id in customer_checkout:
+                product = Product.objects.get(_id=ObjectId(product_id))
+                product_price = product.price
+                amount += product_price * quantity
+                total_amount = ("{:.2f}".format(amount))
+            return JsonResponse({"Total Amount": total_amount}, status=200)
+
+
 class GuestLogin(generics.GenericAPIView):
     def post(self, request):
         first_name = request.data["first_name"]
@@ -319,7 +371,7 @@ class GuestLogin(generics.GenericAPIView):
                     email=email,
                     username=username,
                 )
-                customer = Customer.objects.create(user=user, first_name=first_name, last_name=last_name,email=email,
+                customer = Customer.objects.create(user=user, first_name=first_name, last_name=last_name, email=email,
                                                    guest_login=True)
                 customer.save()
                 return JsonResponse({"message": "Successfully Logged"}, status=200)
