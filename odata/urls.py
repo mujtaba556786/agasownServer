@@ -19,7 +19,8 @@ from odata.views.apis import (
     Checkout,
     DeleteCheckout,
     GuestLogin,
-    google_login
+    google_login,
+    TotalAmount
 )
 from odata.views.accounts import (
     LoginViewSet,
@@ -143,6 +144,7 @@ urlpatterns = [
                   path('checkout/', Checkout.as_view()),
                   path('delete/checkout/', DeleteCheckout.as_view()),
                   path('google-login/', google_login, name="google_login"),
-                  path('guest_login/', GuestLogin.as_view(), name="guest_login")
+                  path('guest_login/', GuestLogin.as_view(), name="guest_login"),
+                  path('total_amount/', TotalAmount.as_view())
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
