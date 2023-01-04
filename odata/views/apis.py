@@ -356,6 +356,7 @@ class GuestLogin(generics.GenericAPIView):
         first_name = request.data["first_name"]
         last_name = request.data["last_name"]
         email = request.data["email"]
+        import pdb; pdb.set_trace()
 
         user_email = User.objects.filter(email=email)
         if user_email:
@@ -363,8 +364,7 @@ class GuestLogin(generics.GenericAPIView):
                                 status=200)
         else:
             try:
-                user_count = User.objects.count()
-                username = f"GUEST_{first_name}{last_name}_{user_count}"
+                username = email
                 user = User.objects.create(
                     first_name=first_name,
                     last_name=last_name,
