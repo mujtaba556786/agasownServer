@@ -352,6 +352,61 @@ class TotalAmount(generics.GenericAPIView):
             return JsonResponse({"Total Amount": total_amount}, status=200)
 
 
+class BuyNow(generics.GenericAPIView):
+    def post(self, request):
+        data = request.data
+        customer_id = data.get("customer_id")
+        product_id = data.get("product_id")
+        quantity = int(data.get("quantity", 0))
+        voucher = data.get("voucher", None)
+        discount = data.get("discount", None)
+
+        if Customer.objects.filter(_id=ObjectId(customer_id)):
+            customer = Customer.objects.get(_id=ObjectId(customer_id))
+            if Product.objects.filter(_id=ObjectId(product_id)):
+                total_amount = 0
+                amount = 0
+                num = None
+                if voucher == "" or discount:
+                    for i in range(len(discount)):
+                        if discount[i].isdigit():
+                            num = discount[i:]
+                            break
+                    disc = int(num)
+                    product = Product.objects.get(_id=ObjectId(product_id))
+                    product_price = product.price
+                    amount += product_price * quantity
+                    total_amount = ("{:.2f}".format(amount - (amount * (disc / 100))))
+                    return JsonResponse({"Total Amount": total_amount}, status=200)
+
+                elif discount == "" or voucher:
+                    for i in range(len(voucher)):
+                        if voucher[i].isdigit():
+                            num = voucher[i:]
+                            break
+                    vouch = int(num)
+                    product = Product.objects.get(_id=ObjectId(product_id))
+                    product_price = product.price
+                    amount += product_price * quantity
+                    total_amount = ("{:.2f}".format(amount - (amount * (vouch / 100))))
+                    customer.voucher = "expired"
+                    customer.save()
+                    return JsonResponse({"Total Amount": total_amount}, status=200)
+
+                else:
+                    product = Product.objects.get(_id=ObjectId(product_id))
+                    product_price = product.price
+                    amount += product_price * quantity
+                    total_amount = ("{:.2f}".format(amount))
+                    return JsonResponse({"Total Amount": total_amount}, status=200)
+            else:
+                return JsonResponse({"message": "Product doesn't exists"},
+                                    status=400)
+        else:
+            return JsonResponse({"message": "Customer doesn't exists"},
+                                status=400)
+
+
 class GuestLogin(generics.GenericAPIView):
     def post(self, request):
         first_name = request.data["first_name"]
