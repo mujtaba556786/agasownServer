@@ -354,7 +354,6 @@ class GuestLogin(generics.GenericAPIView):
         first_name = request.data["first_name"]
         last_name = request.data["last_name"]
         email = request.data["email"]
-        import pdb; pdb.set_trace()
 
         user_email = User.objects.filter(email=email)
         if user_email:
