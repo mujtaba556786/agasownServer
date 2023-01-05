@@ -242,13 +242,12 @@ class ProductVariants(generics.GenericAPIView):
 
 class Checkout(generics.GenericAPIView):
     def patch(self, request):
-        customer_id = request.data["customer_id"]
-        product_id = request.data["product_id"]
-        cus_objInstance = ObjectId(customer_id)
-        product_objInstance = ObjectId(product_id)
-        if Customer.objects.filter(_id=cus_objInstance):
-            customer = Customer.objects.get(_id=cus_objInstance)
-            if Product.objects.filter(_id=product_objInstance):
+        data=request.data
+        customer_id = data.get("customer_id")
+        product_id = data.get("product_id")
+        if Customer.objects.filter(_id=ObjectId(customer_id)):
+            customer = Customer.objects.get(_id=ObjectId(customer_id))
+            if Product.objects.filter(_id=ObjectId(product_id)):
                 customer_checkout = str(customer.checkout).split(",")
                 if product_id in customer_checkout:
                     return JsonResponse({"message": "Product already exists"},
@@ -274,17 +273,15 @@ class DeleteCheckout(generics.GenericAPIView):
         customer_id = request.data["customer_id"]
         product_id = request.data["product_id"]
 
-        cus_objInstance = ObjectId(customer_id)
-        product_objInstance = ObjectId(product_id)
-
-        if Customer.objects.filter(_id=cus_objInstance):
-            customer = Customer.objects.get(_id=cus_objInstance)
-            if Product.objects.filter(_id=product_objInstance):
+        if Customer.objects.filter(_id=ObjectId(customer_id)):
+            customer = Customer.objects.get(_id=ObjectId(customer_id))
+            if Product.objects.filter(_id=ObjectId(product_id)):
                 if customer.checkout:
                     customer_checkout = customer.checkout.split(',')
                     if product_id in customer_checkout:
                         customer_checkout.remove(product_id)
                         customer.checkout = ",".join(customer_checkout)
+                        customer.save()
                     else:
                         return JsonResponse({"message": "Product_id doesn't exists in checkout_session"},
                                             status=400)
@@ -296,7 +293,7 @@ class DeleteCheckout(generics.GenericAPIView):
         else:
             return JsonResponse({"message": "Customer doesn't exists"},
                                 status=400)
-        customer.save()
+
         return JsonResponse({"message": "Deleted Successfully"},
                             status=200)
 
@@ -305,7 +302,7 @@ class TotalAmount(generics.GenericAPIView):
     def post(self, request):
         data = request.data
         customer_id = data.get("customer_id", None)
-        quantity = int(data.get("quantity", 0))
+
         voucher = data.get("voucher", None)
         discount = data.get("discount", None)
 
@@ -314,6 +311,8 @@ class TotalAmount(generics.GenericAPIView):
         total_amount = 0
         amount = 0
         num = None
+        import pdb;
+        pdb.set_trace()
         if voucher == "" or discount:
             for i in range(len(discount)):
                 if discount[i].isdigit():
@@ -321,10 +320,11 @@ class TotalAmount(generics.GenericAPIView):
                     break
             disc = int(num)
             for product_id in customer_checkout:
+                quantity = int(data.get("quantity", 1))
                 product = Product.objects.get(_id=ObjectId(product_id))
                 product_price = product.price
                 amount += product_price * quantity
-                total_amount = ("{:.2f}".format(amount - (amount * (disc / 100))))
+            total_amount = ("{:.2f}".format(amount - (amount * (disc / 100))))
             return JsonResponse({"Total Amount": total_amount}, status=200)
 
         elif discount == "" or voucher:
@@ -334,10 +334,11 @@ class TotalAmount(generics.GenericAPIView):
                     break
             vouch = int(num)
             for product_id in customer_checkout:
+                quantity = int(data.get("quantity", 1))
                 product = Product.objects.get(_id=ObjectId(product_id))
                 product_price = product.price
                 amount += product_price * quantity
-                total_amount = ("{:.2f}".format(amount - (amount * (vouch / 100))))
+            total_amount = ("{:.2f}".format(amount - (amount * (vouch / 100))))
             customer.voucher = "expired"
             customer.save()
 
@@ -345,11 +346,13 @@ class TotalAmount(generics.GenericAPIView):
 
         else:
             for product_id in customer_checkout:
+                quantity = int(data.get("quantity", 1))
                 product = Product.objects.get(_id=ObjectId(product_id))
                 product_price = product.price
                 amount += product_price * quantity
-                total_amount = ("{:.2f}".format(amount))
-            return JsonResponse({"Total Amount": total_amount}, status=200)
+            total_amount = ("{:.2f}".format(amount))
+
+        return JsonResponse({"Total Amount": total_amount}, status=200)
 
 
 class BuyNow(generics.GenericAPIView):
