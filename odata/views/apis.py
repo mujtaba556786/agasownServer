@@ -1,3 +1,5 @@
+import json
+
 import requests
 from django.contrib.auth.models import User
 from django.http import HttpResponse, JsonResponse
@@ -301,7 +303,9 @@ class DeleteCheckout(generics.GenericAPIView):
 class TotalAmount(generics.GenericAPIView):
     def post(self, request):
         data = request.data
+
         customer_id = data.get("customer_id", None)
+        quantity = data.get("quantity", {})
         voucher = data.get("voucher", None)
         discount = data.get("discount", None)
         customer = Customer.objects.get(_id=ObjectId(customer_id))
@@ -309,47 +313,57 @@ class TotalAmount(generics.GenericAPIView):
         total_amount = 0
         amount = 0
         num = None
+        validate_product = []
+        for product_id, qty in quantity.items():
+            validate_product.append(product_id)
 
-        if voucher == "" or discount:
-            for i in range(len(discount)):
-                if discount[i].isdigit():
-                    num = discount[i:]
-                    break
-            disc = int(num)
-            for product_id in customer_checkout:
-                quantity = int(data.get("quantity", 1))
-                product = Product.objects.get(_id=ObjectId(product_id))
-                product_price = product.price
-                amount += product_price * quantity
-            total_amount = ("{:.2f}".format(amount - (amount * (disc / 100))))
-            return JsonResponse({"Total Amount": total_amount}, status=200)
-
-        elif discount == "" or voucher:
-            for i in range(len(voucher)):
-                if voucher[i].isdigit():
-                    num = voucher[i:]
-                    break
-            vouch = int(num)
-            for product_id in customer_checkout:
-                quantity = int(data.get("quantity", 1))
-                product = Product.objects.get(_id=ObjectId(product_id))
-                product_price = product.price
-                amount += product_price * quantity
-            total_amount = ("{:.2f}".format(amount - (amount * (vouch / 100))))
-            customer.voucher = "expired"
-            customer.save()
-
-            return JsonResponse({"Total Amount": total_amount}, status=200)
+        if validate_product != customer_checkout:
+            return JsonResponse({"Product doesn't match"}, status=404)
 
         else:
-            for product_id in customer_checkout:
-                quantity = int(data.get("quantity", 1))
-                product = Product.objects.get(_id=ObjectId(product_id))
-                product_price = product.price
-                amount += product_price * quantity
-            total_amount = ("{:.2f}".format(amount))
 
-        return JsonResponse({"Total Amount": total_amount}, status=200)
+            if voucher == "" or discount:
+                for i in range(len(discount)):
+                    if discount[i].isdigit():
+                        num = discount[i:]
+                        break
+                disc = int(num)
+                for product_id, qty in quantity.items():
+                    product = Product.objects.get(_id=ObjectId(product_id))
+                    product_price = product.price
+                    product_discount = int(float(product.discount))
+                    price = product_price - (product_price * (product_discount / 100))
+                    amount += price * int(qty)
+                total_amount = ("{:.2f}".format(amount - (amount * (disc / 100))))
+                return JsonResponse({"Total Amount": total_amount}, status=200)
+
+            elif discount == "" or voucher:
+                for i in range(len(voucher)):
+                    if voucher[i].isdigit():
+                        num = voucher[i:]
+                        break
+                vouch = int(num)
+                for product_id, qty in quantity.items():
+                    product = Product.objects.get(_id=ObjectId(product_id))
+                    product_price = product.price
+                    product_discount= int(float(product.discount))
+                    price = product_price-(product_price * (product_discount/100))
+                    amount += price * int(qty)
+                total_amount = ("{:.2f}".format(amount - (amount * (vouch / 100))))
+                customer.voucher = "expired"
+                customer.save()
+
+                return JsonResponse({"Total Amount": total_amount}, status=200)
+
+            else:
+                for product_id, qty in quantity.items():
+                    product = Product.objects.get(_id=ObjectId(product_id))
+                    product_price = product.price
+                    product_discount = int(float(product.discount))
+                    price = product_price - (product_price * (product_discount / 100))
+                    amount += price * int(qty)
+                total_amount = ("{:.2f}".format(amount))
+            return JsonResponse({"Total Amount": total_amount}, status=200)
 
 
 class BuyNow(generics.GenericAPIView):
