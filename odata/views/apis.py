@@ -302,7 +302,6 @@ class TotalAmount(generics.GenericAPIView):
     def post(self, request):
         data = request.data
         customer_id = data.get("customer_id", None)
-
         voucher = data.get("voucher", None)
         discount = data.get("discount", None)
 
@@ -311,8 +310,7 @@ class TotalAmount(generics.GenericAPIView):
         total_amount = 0
         amount = 0
         num = None
-        import pdb;
-        pdb.set_trace()
+
         if voucher == "" or discount:
             for i in range(len(discount)):
                 if discount[i].isdigit():
