@@ -304,7 +304,6 @@ class TotalAmount(generics.GenericAPIView):
         customer_id = data.get("customer_id", None)
         voucher = data.get("voucher", None)
         discount = data.get("discount", None)
-
         customer = Customer.objects.get(_id=ObjectId(customer_id))
         customer_checkout = str(customer.checkout).split(",")
         total_amount = 0
