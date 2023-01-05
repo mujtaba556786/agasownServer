@@ -13,10 +13,7 @@ from rest_framework.reverse import reverse
 from rest_framework.views import APIView
 from django.db import connection
 from Project.settings import GP_CLIENT_ID, GP_CLIENT_SECRET
-from datetime import datetime
-from urllib.parse import urlencode
-from django.conf import settings
-from django.contrib import messages
+from django.contrib.auth.hashers import make_password
 
 from odata.models import (
     Payment,
@@ -244,7 +241,7 @@ class ProductVariants(generics.GenericAPIView):
 
 class Checkout(generics.GenericAPIView):
     def patch(self, request):
-        data=request.data
+        data = request.data
         customer_id = data.get("customer_id")
         product_id = data.get("product_id")
         if Customer.objects.filter(_id=ObjectId(customer_id)):
@@ -346,8 +343,8 @@ class TotalAmount(generics.GenericAPIView):
                 for product_id, qty in quantity.items():
                     product = Product.objects.get(_id=ObjectId(product_id))
                     product_price = product.price
-                    product_discount= int(float(product.discount))
-                    price = product_price-(product_price * (product_discount/100))
+                    product_discount = int(float(product.discount))
+                    price = product_price - (product_price * (product_discount / 100))
                     amount += price * int(qty)
                 total_amount = ("{:.2f}".format(amount - (amount * (vouch / 100))))
                 customer.voucher = "expired"
@@ -494,3 +491,31 @@ def google_login(request):
         scope = " ".join(scope)
         url = url % (GP_CLIENT_ID, scope, redirect_uri)
         return redirect(url)
+
+
+class UserUpdatePassword(generics.GenericAPIView):
+    def patch(self, request):
+        data = request.data
+        customer_id = data.get("customer_id")
+        password = data.get("password")
+        confirm_password = data.get("confirm_password")
+
+        if password != confirm_password:
+            return JsonResponse({"message": "Password doesn't match"},
+                                status=406)
+        else:
+            if Customer.objects.filter(_id=ObjectId(customer_id)):
+                customer = Customer.objects.get(_id=ObjectId(customer_id))
+                user_id = customer.user_id
+                user = User.objects.get(id=user_id)
+                if user.password:
+                    return JsonResponse({"message": "Password already stored"},
+                                        status=403)
+                else:
+                    user.password = make_password(confirm_password)
+                    user.save()
+                    return JsonResponse({"message": "Password stored successfully"},
+                                    status=200)
+            else:
+                return JsonResponse({"message": "Customer doest not exists"},
+                                    status=400)
