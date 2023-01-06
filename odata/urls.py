@@ -21,7 +21,6 @@ from odata.views.apis import (
     GuestLogin,
     google_login,
     TotalAmount,
-    BuyNow,
     UserUpdatePassword
 )
 from odata.views.accounts import (
@@ -148,7 +147,6 @@ urlpatterns = [
                   path('google-login/', google_login, name="google_login"),
                   path('guest_login/', GuestLogin.as_view(), name="guest_login"),
                   path('total_amount/', TotalAmount.as_view()),
-                  path('buy_now/', BuyNow.as_view()),
                   path('guest_password/', UserUpdatePassword.as_view())
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
