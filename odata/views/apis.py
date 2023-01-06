@@ -1,8 +1,6 @@
-import json
-
 import requests
 from django.contrib.auth.models import User
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.shortcuts import redirect
 from rest_framework import viewsets, status, generics
 from rest_framework.response import Response
@@ -10,10 +8,9 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from bson import ObjectId
 from rest_framework.reverse import reverse
-from rest_framework.views import APIView
-from django.db import connection
 from Project.settings import GP_CLIENT_ID, GP_CLIENT_SECRET
 from django.contrib.auth.hashers import make_password
+from odata.utility.helpers import get_access_token
 
 from odata.models import (
     Payment,
@@ -269,8 +266,9 @@ class Checkout(generics.GenericAPIView):
 
 class DeleteCheckout(generics.GenericAPIView):
     def delete(self, request):
-        customer_id = request.data["customer_id"]
-        product_id = request.data["product_id"]
+        data = request.data
+        customer_id = data.get("customer_id")
+        product_id = data.get("product_id")
 
         if Customer.objects.filter(_id=ObjectId(customer_id)):
             customer = Customer.objects.get(_id=ObjectId(customer_id))
@@ -371,7 +369,9 @@ class GuestLogin(generics.GenericAPIView):
 
         user_email = User.objects.filter(email=email)
         if user_email:
-            return JsonResponse({"message": "Email_Id already exists"},
+            email = User.objects.filter(email=email)[0]
+            token = get_access_token(email)
+            return JsonResponse({"message": "Email_Id already exists", "token": token},
                                 status=200)
         else:
             try:
@@ -382,10 +382,12 @@ class GuestLogin(generics.GenericAPIView):
                     email=email,
                     username=username,
                 )
+                token = get_access_token(user)
                 customer = Customer.objects.create(user=user, first_name=first_name, last_name=last_name, email=email,
                                                    guest_login=True)
                 customer.save()
-                return JsonResponse({"message": "Successfully Logged"}, status=200)
+
+                return JsonResponse({"message": "Successfully Logged In", "token": token}, status=200)
             except Exception as e:
                 return JsonResponse({"message": str(e)}, status=500)
 
@@ -459,6 +461,8 @@ class UserUpdatePassword(generics.GenericAPIView):
                 else:
                     user.password = make_password(confirm_password)
                     user.save()
+                    customer.guest_login = False
+                    customer.save()
                     return JsonResponse({"message": "Password stored successfully"},
                                     status=200)
             else:
