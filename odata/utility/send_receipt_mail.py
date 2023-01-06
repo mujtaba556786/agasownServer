@@ -35,9 +35,8 @@ def send_mail_sofort(customer_email, customer_name, payment_type, bank_name, ban
                             status=500)
 
 
-def send_mail_paypal(first_name,last_name, email, product_name, quantity, price, total_amount):
-    email_body = f"Hi {first_name} {last_name} ,\n Here is your Order Summary: \n" \
-                 f"Product Name: " + product_name + "\n Product Quantity: " + quantity + "\n Product Price: " + price + "\n " \
+def send_mail_paypal(first_name,last_name, email, total_amount):
+    email_body = f"Hi {first_name} {last_name} ,\n Transaction Details for your order: \n" \
                  f"Total Amount paid: " + total_amount + "\n Mode of payment: PayPal \n " \
                  f"Your order will be delivered within 3 working days. You will receive an email shortly after it's dispatched.\n " \
                  f"Best wishes,\n AgasOwn Marketing Team \n "
