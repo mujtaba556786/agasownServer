@@ -107,7 +107,24 @@ class ProductModelInline(admin.TabularInline):
     image_preview.short_description = 'Preview'
 
 
-class ProductVariantInline(admin.TabularInline):
+class ProductSizeForm(forms.ModelForm):
+    products = Product.objects.all()
+    product_variant = ProductVariant.objects.all()
+    products_choice = [('', '-----')]
+    products_size = [('', '-----')]
+    if products:
+        products_name = [(None, '-----')] + [(x._id, x.product_name) for x in products]
+        size = forms.ChoiceField(choices=products_name)
+        color = forms.ChoiceField(choices=products_name)
+        if product_variant:
+            product_size = [(None, '-----')] + [(x._id, x.size) for x in product_variant]
+            product_color = [(None, '-----')] + [(x._id, x.color) for x in product_variant]
+            size_variant = forms.ChoiceField(choices=product_size)
+            color_variant = forms.ChoiceField(choices=product_color)
+
+
+class ProductVariantInline(admin.StackedInline):
+    form = ProductSizeForm
     model = ProductVariant
     formset = CompositionElementFormSet
 
