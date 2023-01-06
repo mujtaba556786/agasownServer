@@ -141,6 +141,8 @@ class StripeCard(APIView):
                                   payment_type=payment_method_type, status=payment_status,
                                   date_of_payment=date_of_payment, amount=total_amount)
                 payment.save()
+                customer.checkout = ""
+                customer.save()
 
             except stripe.error.CardError as e:
                 return response.Response(
@@ -207,6 +209,8 @@ class StripSofort(APIView):
             payment = Payment(order="AGA", invoice=f"AGASOWN_{date}_{invoice_count}", payment_type=payment_type, customer=customer,
                               status=payment_status, date_of_payment=date_of_payment,amount=amount)
             payment.save()
+            customer.checkout = ""
+            customer.save()
 
             return redirect("http://64.227.115.243/index.html#/payment",
                             status=200)
