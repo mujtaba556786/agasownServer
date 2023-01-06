@@ -54,6 +54,8 @@ class Paypal(APIView):
                 payment = Payment(order="AGASOWN", invoice=f"AGASOWN_{invoice_date}_{invoice_count}", payment_type="PAYPAL", customer=customer,
                                   status=payment_status, date_of_payment=date,amount=payment_amount)
                 payment.save()
+                customer.checkout = ""
+                customer.save()
 
                 return redirect("http://64.227.115.243/index.html#/payment",
                                     status=200)
