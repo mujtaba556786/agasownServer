@@ -149,6 +149,6 @@ urlpatterns = [
                   path('guest_login/', GuestLogin.as_view(), name="guest_login"),
                   path('total_amount/', TotalAmount.as_view()),
                   path('buy_now/', BuyNow.as_view()),
-                  path('updatepass/',UserUpdatePassword.as_view())
+                  path('guest_password/', UserUpdatePassword.as_view())
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
