@@ -368,10 +368,15 @@ class GuestLogin(generics.GenericAPIView):
         email = request.data["email"]
 
         user_email = User.objects.filter(email=email)
+
         if user_email:
+            user = User.objects.get(email=user_email[0])
+            user_id = user.id
+            customer = Customer.objects.get(user=user_id)
+            customer_id = str(customer._id)
             email = User.objects.filter(email=email)[0]
             token = get_access_token(email)
-            return JsonResponse({"message": "Email_Id already exists", "token": token},
+            return JsonResponse({"message": "Email_Id already exists", "token": token, "customer_id": customer_id},
                                 status=200)
         else:
             try:
@@ -386,8 +391,10 @@ class GuestLogin(generics.GenericAPIView):
                 customer = Customer.objects.create(user=user, first_name=first_name, last_name=last_name, email=email,
                                                    guest_login=True)
                 customer.save()
+                customer_id = str(customer._id)
 
-                return JsonResponse({"message": "Successfully Logged In", "token": token}, status=200)
+                return JsonResponse({"message": "Successfully Logged In", "token": token, "customer": customer_id},
+                                    status=200)
             except Exception as e:
                 return JsonResponse({"message": str(e)}, status=500)
 
@@ -464,7 +471,7 @@ class UserUpdatePassword(generics.GenericAPIView):
                     customer.guest_login = False
                     customer.save()
                     return JsonResponse({"message": "Password stored successfully"},
-                                    status=200)
+                                        status=200)
             else:
                 return JsonResponse({"message": "Customer doest not exists"},
                                     status=400)
