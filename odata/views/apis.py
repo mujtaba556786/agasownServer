@@ -149,13 +149,12 @@ class PaymentViewset(viewsets.ModelViewSet):
 
 class Wishlist(generics.GenericAPIView):
     def patch(self, request):
-        customer_id = request.data["customer_id"]
-        product_id = request.data["product_id"]
-        cus_objInstance = ObjectId(customer_id)
-        product_objInstance = ObjectId(product_id)
-        if Customer.objects.filter(_id=cus_objInstance):
-            customer = Customer.objects.get(_id=cus_objInstance)
-            if Product.objects.filter(_id=product_objInstance):
+        data = request.data
+        customer_id = data.get("customer_id", None)
+        product_id = data.get("product_id", None)
+        if Customer.objects.filter(_id=ObjectId(customer_id)):
+            customer = Customer.objects.get(_id=ObjectId(customer_id))
+            if Product.objects.filter(_id=ObjectId(product_id)):
                 customer_wishlist = str(customer.wishlist).split(",")
                 if product_id in customer_wishlist:
                     return JsonResponse({"message": "Product already exists"},
@@ -165,6 +164,8 @@ class Wishlist(generics.GenericAPIView):
                     wishlist = f"{wishlist},{product_id}" if wishlist else f"{product_id}"
                     customer.wishlist = wishlist
                     customer.save()
+                    return JsonResponse({"message": "Added Successfully"},
+                                        status=200)
             else:
                 return JsonResponse({"message": "Product doesn't exists"},
                                     status=400)
@@ -172,26 +173,24 @@ class Wishlist(generics.GenericAPIView):
             return JsonResponse({"message": "Customer doesn't exists"},
                                 status=400)
 
-        return JsonResponse({"message": "Added Successfully"},
-                            status=200)
-
 
 class DeleteWishlist(generics.GenericAPIView):
     def delete(self, request):
-        customer_id = request.data["customer_id"]
-        product_id = request.data["product_id"]
+        data = request.data
+        customer_id = data.get("customer_id", None)
+        product_id = data.get("product_id", None)
 
-        cus_objInstance = ObjectId(customer_id)
-        product_objInstance = ObjectId(product_id)
-
-        if Customer.objects.filter(_id=cus_objInstance):
-            customer = Customer.objects.get(_id=cus_objInstance)
-            if Product.objects.filter(_id=product_objInstance):
+        if Customer.objects.filter(_id=ObjectId(customer_id)):
+            customer = Customer.objects.get(_id=ObjectId(customer_id))
+            if Product.objects.filter(_id=ObjectId(product_id)):
                 if customer.wishlist:
                     customer_wishlist = customer.wishlist.split(',')
                     if product_id in customer_wishlist:
                         customer_wishlist.remove(product_id)
                         customer.wishlist = ",".join(customer_wishlist)
+                        customer.save()
+                        return JsonResponse({"message": "Deleted Successfully"},
+                                            status=200)
                     else:
                         return JsonResponse({"message": "Product_id doesn't exists in wishlist"},
                                             status=400)
@@ -203,9 +202,6 @@ class DeleteWishlist(generics.GenericAPIView):
         else:
             return JsonResponse({"message": "Customer doesn't exists"},
                                 status=400)
-        customer.save()
-        return JsonResponse({"message": "Deleted Successfully"},
-                            status=200)
 
 
 class ProductVariants(generics.GenericAPIView):
@@ -214,17 +210,16 @@ class ProductVariants(generics.GenericAPIView):
         if not product_id:
             return JsonResponse({"message": "Enter product id"}, status=400)
         else:
-            product_objInstance = ObjectId(product_id)
-
-            product = Product.objects.get(_id=product_objInstance)
+            product = Product.objects.get(_id=ObjectId(product_id))
             if not product:
                 return JsonResponse({"message": "Product doesn't exists"}, status=400)
 
             else:
-                size = request.data["size"]
-                ean = request.data["ean"]
-                color = request.data["color"]
-                material = request.data["material"]
+                data = request.data
+                size = data.get("size", None)
+                ean = data.get("ean", None)
+                color = data.get("color", None)
+                material = data.get("material", None)
 
                 productVariant = ProductVariant(size=size, color=color, material=material, parent_product=product,
                                                 ean=ean)
@@ -239,8 +234,8 @@ class ProductVariants(generics.GenericAPIView):
 class Checkout(generics.GenericAPIView):
     def patch(self, request):
         data = request.data
-        customer_id = data.get("customer_id")
-        product_id = data.get("product_id")
+        customer_id = data.get("customer_id", None)
+        product_id = data.get("product_id", None)
         if Customer.objects.filter(_id=ObjectId(customer_id)):
             customer = Customer.objects.get(_id=ObjectId(customer_id))
             if Product.objects.filter(_id=ObjectId(product_id)):
@@ -267,8 +262,8 @@ class Checkout(generics.GenericAPIView):
 class DeleteCheckout(generics.GenericAPIView):
     def delete(self, request):
         data = request.data
-        customer_id = data.get("customer_id")
-        product_id = data.get("product_id")
+        customer_id = data.get("customer_id", None)
+        product_id = data.get("product_id", None)
 
         if Customer.objects.filter(_id=ObjectId(customer_id)):
             customer = Customer.objects.get(_id=ObjectId(customer_id))
@@ -298,7 +293,6 @@ class DeleteCheckout(generics.GenericAPIView):
 class TotalAmount(generics.GenericAPIView):
     def post(self, request):
         data = request.data
-
         customer_id = data.get("customer_id", None)
         quantity = data.get("quantity", {})
         voucher = data.get("voucher", None)
@@ -363,9 +357,10 @@ class TotalAmount(generics.GenericAPIView):
 
 class GuestLogin(generics.GenericAPIView):
     def post(self, request):
-        first_name = request.data["first_name"]
-        last_name = request.data["last_name"]
-        email = request.data["email"]
+        data = request.data
+        first_name = data.get("first_name", None)
+        last_name = data.get("last_name", None)
+        email = data.get("email", None)
 
         user_email = User.objects.filter(email=email)
 
@@ -450,9 +445,9 @@ def google_login(request):
 class UserUpdatePassword(generics.GenericAPIView):
     def patch(self, request):
         data = request.data
-        customer_id = data.get("customer_id")
-        password = data.get("password")
-        confirm_password = data.get("confirm_password")
+        customer_id = data.get("customer_id", None)
+        password = data.get("password", None)
+        confirm_password = data.get("confirm_password", None)
 
         if password != confirm_password:
             return JsonResponse({"message": "Password doesn't match"},
