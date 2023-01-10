@@ -121,7 +121,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        return Customer.objects.get(_id=ObjectId(self.kwargs.get('pk')))
+        return Customer.objects.get(user_id=self.kwargs.get('pk'))
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
@@ -324,6 +324,9 @@ class TotalAmount(generics.GenericAPIView):
                     price = product_price - (product_price * (product_discount / 100))
                     amount += price * int(qty)
                 total_amount = ("{:.2f}".format(amount - (amount * (disc / 100))))
+                customer.discount="You have already used"
+                customer.discount_value=False
+                customer.save()
                 return JsonResponse({"Total Amount": total_amount}, status=200)
 
             elif discount == "" or voucher:
@@ -339,7 +342,8 @@ class TotalAmount(generics.GenericAPIView):
                     price = product_price - (product_price * (product_discount / 100))
                     amount += price * int(qty)
                 total_amount = ("{:.2f}".format(amount - (amount * (vouch / 100))))
-                customer.voucher = "expired"
+                customer.voucher = "You have already used"
+                customer.voucher_value=False
                 customer.save()
 
                 return JsonResponse({"Total Amount": total_amount}, status=200)
@@ -368,7 +372,7 @@ class GuestLogin(generics.GenericAPIView):
             user = User.objects.get(email=user_email[0])
             user_id = user.id
             customer = Customer.objects.get(user=user_id)
-            customer_id = str(customer._id)
+            customer_id = str(customer.user_id)
             email = User.objects.filter(email=email)[0]
             token = get_access_token(email)
             return JsonResponse({"message": "Email_Id already exists", "token": token, "customer_id": customer_id},
@@ -386,7 +390,7 @@ class GuestLogin(generics.GenericAPIView):
                 customer = Customer.objects.create(user=user, first_name=first_name, last_name=last_name, email=email,
                                                    guest_login=True)
                 customer.save()
-                customer_id = str(customer._id)
+                customer_id = str(customer.user_id)
 
                 return JsonResponse({"message": "Successfully Logged In", "token": token, "customer": customer_id},
                                     status=200)
