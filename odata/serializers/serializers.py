@@ -33,7 +33,7 @@ class ProductVariantSerializers(serializers.ModelSerializer):
     class Meta:
         model = ProductVariant
         fields = "__all__"
-    
+
     def to_representation(self, instance):
         rep = super(ProductVariantSerializers, self).to_representation(instance)
         rep["parent_product"] = str(rep["parent_product"])
@@ -84,6 +84,8 @@ class CustomerSerializers(serializers.ModelSerializer):
     def create(self, validated_data):
         username = validated_data.pop("username")
         email = validated_data.pop("email")
+        import pdb;
+        pdb.set_trace()
         user = User.objects.create(
             first_name=validated_data["first_name"],
             last_name=validated_data["last_name"],
@@ -100,7 +102,6 @@ class CustomerSerializers(serializers.ModelSerializer):
                                            postal_code=validated_data.get("postal_code"),
                                            country=validated_data.get("country"),
                                            phone=validated_data.get("phone"),
-                                           password=validated_data.get("password"),
                                            salutation=validated_data.get("salutation"),
                                            credit_card=validated_data.get("credit_card"),
                                            credit_card_type_id=validated_data.get("credit_card_type_id"),
@@ -125,6 +126,8 @@ class CustomerSerializers(serializers.ModelSerializer):
                                            date_entered=validated_data.get("date_entered"),
                                            terms_condition=validated_data.get("terms_condition"),
                                            data_privacy=validated_data.get("data_privacy"),
+                                           voucher="welcome10",
+                                           voucher_value=True,
                                            guest_login=False,
                                            )
 
@@ -143,6 +146,7 @@ class CustomerSerializers(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"username": "Username is already registered with us"}
                 )
+
             return validated_data
         else:
             return validated_data
@@ -160,11 +164,11 @@ class CategorySerializers(serializers.ModelSerializer):
     class Meta:
         model = Categories
         fields = "__all__"
-    
+
     def to_representation(self, instance):
         rep = super(CategorySerializers, self).to_representation(instance)
         rep["parent"] = str(rep["parent"])
-        return rep    
+        return rep
 
 
 class PaymentSerializers(serializers.ModelSerializer):
@@ -177,7 +181,7 @@ class PaymentSerializers(serializers.ModelSerializer):
 
         model = Payment
         fields = "__all__"
-    
+
     def to_representation(self, instance):
         rep = super(PaymentSerializers, self).to_representation(instance)
         rep["customer"] = str(rep["customer"])
