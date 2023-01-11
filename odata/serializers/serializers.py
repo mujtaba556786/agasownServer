@@ -84,8 +84,6 @@ class CustomerSerializers(serializers.ModelSerializer):
     def create(self, validated_data):
         username = validated_data.pop("username")
         email = validated_data.pop("email")
-        import pdb;
-        pdb.set_trace()
         user = User.objects.create(
             first_name=validated_data["first_name"],
             last_name=validated_data["last_name"],
