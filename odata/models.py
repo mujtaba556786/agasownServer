@@ -67,6 +67,7 @@ class Customer(models.Model):
     _id = models.ObjectIdField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     email = models.CharField(max_length=200, null=True, blank=True)
+    salutation = models.CharField(max_length=100, null=True, blank=True)
     first_name = models.CharField(max_length=100, null=True, blank=True)
     last_name = models.CharField(max_length=100, null=True, blank=True)
     address1 = models.CharField(max_length=100, null=True, blank=True)
@@ -76,11 +77,11 @@ class Customer(models.Model):
     postal_code = models.IntegerField(null=True, blank=True)
     country = models.CharField(max_length=100, null=True, blank=True)
     phone = models.CharField(max_length=10, null=True, blank=True)
-    password = models.TextField(max_length=100, null=True)
-    salutation = models.CharField(max_length=100, null=True, blank=True)
     credit_card = models.CharField(max_length=15, null=True, blank=True)
     credit_card_type_id = models.CharField(max_length=100, null=True)
     mm_yy = models.CharField(max_length=7, null=True, blank=True)
+    salutation_billing = models.CharField(max_length=100, null=True, blank=True)
+    name = models.CharField(max_length=100, null=True, blank=True)
     billing_address = models.CharField(max_length=250, null=True, blank=True)
     billing_city = models.CharField(max_length=100, null=True, blank=True)
     billing_postal_code = models.CharField(max_length=100, null=True, blank=True)
@@ -92,9 +93,9 @@ class Customer(models.Model):
     ship_country = models.CharField(max_length=100, null=True, blank=True)
     marketing_code = models.CharField(max_length=100, null=True, blank=True)
     source = models.CharField(max_length=100, null=True, blank=True)
-    voucher = models.CharField(max_length=10, null=True, blank=True)
+    voucher = models.CharField(max_length=10, null=True)
     voucher_value = models.BooleanField(default=False, null=True)
-    discount = models.CharField(max_length=10, null=True, blank=True)
+    discount = models.CharField(max_length=10, null=True)
     discount_value = models.BooleanField(default=False, null=True)
     wishlist = models.TextField(null=True)
     checkout = models.TextField(null=True)
@@ -207,13 +208,13 @@ class ProductVariant(models.Model):
     ean = models.CharField(max_length=100, null=True)
     image = models.URLField(null=True, blank=True)
 
-    # def __str__(self):
-    #     # product = Product.objects.get(_id=self.parent_product_id)
-    #     # print(product)
-    #     # if product.product_name is None:
-    #     #     return ""
-    #     # return self.product.product_name
-    #     return "Try this"
+    def __str__(self):
+        # product = Product.objects.get(_id=self.parent_product_id)
+        # print(product)
+        # if product.product_name is None:
+        #     return ""
+        # return self.product.product_name
+        return ""
 
 
 # class Shipper(models.Model):
@@ -223,14 +224,14 @@ class ProductVariant(models.Model):
 #     created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
 #     updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
 
-# class Order(models.Model):    
+# class Order(models.Model):
 #     _id = models.ObjectIdField(primary_key=True)
 #     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
 #     order_number = models.CharField(max_length=100,null=True,blank=True)
 #     payment_id = models.CharField(max_length=50,null=True,blank=True)
 #     order_date = models.DateTimeField(auto_now_add=True)
 #     ship_date = models.DateTimeField(default='')
-#     required_date = models.DateField()    
+#     required_date = models.DateField()
 #     freight = models.CharField(max_length=100,null=True,blank=True)
 #     sale_tax = models.CharField(max_length=100,null=True,blank=True)
 #     timestamp = models.DateTimeField(auto_now_add=True)

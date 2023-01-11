@@ -64,7 +64,7 @@ class Paypal(APIView):
     def post(self, request):
         data = request.POST.dict()
         currency = data.get("currency")
-        total = int(data.get("total_amount"))
+        total = data.get("total_amount")
         customer_id = data.get("customer_id")
         payment = paypalrestsdk.Payment({
             "intent": "sale",
@@ -77,7 +77,7 @@ class Paypal(APIView):
             "transactions": [
                 {
                     "amount": {
-                        "total": total,
+                        "total": float(total),
                         "currency": currency
                     },
                     "description": "This is the payment transaction description."}]})
