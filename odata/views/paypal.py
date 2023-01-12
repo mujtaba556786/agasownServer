@@ -7,10 +7,9 @@ import paypalrestsdk
 from django.core.mail import send_mail
 from Project.settings import EMAIL_HOST_USER
 from django.shortcuts import redirect
-# import logging
 from odata.utility.send_receipt_mail import send_mail_paypal
 from Project.settings import PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET
-from odata.models import Customer, Payment
+from odata.models import Customer, Payment, Order
 import datetime
 
 paypalrestsdk.configure({
@@ -22,6 +21,8 @@ paypalrestsdk.configure({
 
 class Paypal(APIView):
     def get(self, request):
+        import pdb;
+        pdb.set_trace()
         payment_id = request.GET["paymentId"]
         payer_id = request.GET["PayerID"]
         customer_id = request.GET["customer_id"]
@@ -40,6 +41,7 @@ class Paypal(APIView):
             payment_status = payment.transactions[0].related_resources[0].sale.state
             payment_amount = payment.transactions[0].related_resources[0].sale.amount.total
             invoice_count = Payment.objects.count()
+            order_count = Order.objects.count()
 
             send_mail_paypal(first_name=first_name, last_name=last_name,
                              total_amount=total_amount, email=email)
@@ -51,7 +53,13 @@ class Paypal(APIView):
                 payment = Payment(order="AGASOWN", invoice=f"AGASOWN_{invoice_date}_{invoice_count}",
                                   payment_type="PAYPAL", customer=customer,
                                   status=payment_status, date_of_payment=date, amount=payment_amount)
+                print(payment)
                 payment.save()
+                payment_id = payment._id
+                cust_id = Order.customer
+                print(cust_id)
+                order = Order(customer=customer, order_number=order_count, payment_id=payment, order_date=date, paid= True)
+                print("@@@@@@@@@@@@@@@@@@@@@@@@@@@", order)
                 customer.checkout = ""
                 customer.save()
 
@@ -72,8 +80,8 @@ class Paypal(APIView):
                 "payment_method": "paypal"
             },
             "redirect_urls": {
-                "return_url": f"http://64.227.115.243:8080/paypal/payment/?customer_id={customer_id}",
-                "cancel_url": "http://64.227.115.243:8080/"},
+                "return_url": f"http://127.0.0.1:8000/paypal/payment/?customer_id={customer_id}",
+                "cancel_url": "http://127.0.0.1:8000/"},
             "transactions": [
                 {
                     "amount": {

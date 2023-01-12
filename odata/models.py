@@ -224,29 +224,20 @@ class ProductVariant(models.Model):
 #     created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
 #     updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
 
-# class Order(models.Model):
-#     _id = models.ObjectIdField(primary_key=True)
-#     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-#     order_number = models.CharField(max_length=100,null=True,blank=True)
-#     payment_id = models.CharField(max_length=50,null=True,blank=True)
-#     order_date = models.DateTimeField(auto_now_add=True)
-#     ship_date = models.DateTimeField(default='')
-#     required_date = models.DateField()
-#     freight = models.CharField(max_length=100,null=True,blank=True)
-#     sale_tax = models.CharField(max_length=100,null=True,blank=True)
-#     timestamp = models.DateTimeField(auto_now_add=True)
-#     transaction_status = models.CharField(max_length=1,choices=Trasaction_status)
-#     error_lock = models.CharField(max_length=100,null=True,blank=True)
-#     error_msg = models.CharField(max_length=100,null=True,blank=True)
-#     fullfiled = models.BooleanField(default=False)
-#     deleted = models.BooleanField(default=False)
-#     paid = models.BooleanField(default=False)
-#     payment_date = models.DateTimeField(auto_now_add=True)
-#     created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
+class Order(models.Model):
+    _id = models.ObjectIdField(primary_key=True)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    order_number = models.CharField(max_length=100, null=True, blank=True)
+    payment_id = models.CharField(max_length=50, null=True, blank=True)
+    product_id = models.TextField(null=True)
+    order_date = models.DateTimeField(auto_now_add=True)
+    paid = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
 
-#     def __str__(self):
-#         return self.order_number
+    def __str__(self):
+        return self.order_number
+
 
 class Payment(models.Model):
     _id = models.ObjectIdField(primary_key=True)
