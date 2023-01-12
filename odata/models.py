@@ -224,25 +224,10 @@ class ProductVariant(models.Model):
 #     created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
 #     updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
 
-class Order(models.Model):
-    _id = models.ObjectIdField(primary_key=True)
-    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    order_number = models.CharField(max_length=100, null=True, blank=True)
-    payment_id = models.CharField(max_length=50, null=True, blank=True)
-    product_id = models.TextField(null=True)
-    order_date = models.DateTimeField(auto_now_add=True)
-    paid = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
-
-    def __str__(self):
-        return self.order_number
-
 
 class Payment(models.Model):
     _id = models.ObjectIdField(primary_key=True)
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    order = models.CharField(max_length=100)
     invoice = models.CharField(max_length=100)
     amount = models.DecimalField(max_digits=19, decimal_places=2)
     payment_type = models.CharField(max_length=50)
@@ -256,6 +241,21 @@ class Payment(models.Model):
         if customer.first_name is None or customer.last_name is None:
             return ""
         return customer.first_name + ' ' + customer.last_name
+
+
+class Order(models.Model):
+    _id = models.ObjectIdField(primary_key=True)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    order_number = models.CharField(max_length=100, null=True, blank=True)
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE)
+    product_id = models.TextField(null=True)
+    order_date = models.DateTimeField(auto_now_add=True)
+    paid = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
+
+    def __str__(self):
+        return self.order_number
 
 
 # class OrderDetail(models.Model):
