@@ -11,6 +11,7 @@ from rest_framework.reverse import reverse
 from Project.settings import GP_CLIENT_ID, GP_CLIENT_SECRET
 from django.contrib.auth.hashers import make_password
 from odata.utility.helpers import get_access_token
+from django.forms.models import model_to_dict
 
 from odata.models import (
     Payment,
@@ -20,6 +21,7 @@ from odata.models import (
     ProductVariant,
     ProductImage,
     NewsletterSubscription,
+    Order
 )
 from odata.serializers.serializers import (
     ProductSerializers,
@@ -149,59 +151,65 @@ class PaymentViewset(viewsets.ModelViewSet):
 
 class Wishlist(generics.GenericAPIView):
     def patch(self, request):
-        data = request.data
-        customer_id = data.get("customer_id", None)
-        product_id = data.get("product_id", None)
-        if Customer.objects.filter(_id=ObjectId(customer_id)):
-            customer = Customer.objects.get(_id=ObjectId(customer_id))
-            if Product.objects.filter(_id=ObjectId(product_id)):
-                customer_wishlist = str(customer.wishlist).split(",")
-                if product_id in customer_wishlist:
-                    return JsonResponse({"message": "Product already exists"},
-                                        status=400)
+        customer_id = request.GET.get('customer_id')
+        if customer_id:
+            data = request.data
+            product_id = data.get("product_id", None)
+            if Customer.objects.filter(_id=ObjectId(customer_id)):
+                customer = Customer.objects.get(_id=ObjectId(customer_id))
+                if Product.objects.filter(_id=ObjectId(product_id)):
+                    customer_wishlist = str(customer.wishlist).split(",")
+                    if product_id in customer_wishlist:
+                        return JsonResponse({"message": "Product already exists"},
+                                            status=400)
+                    else:
+                        wishlist = customer.wishlist
+                        wishlist = f"{wishlist},{product_id}" if wishlist else f"{product_id}"
+                        customer.wishlist = wishlist
+                        customer.save()
+                        return JsonResponse({"message": "Added Successfully"},
+                                            status=200)
                 else:
-                    wishlist = customer.wishlist
-                    wishlist = f"{wishlist},{product_id}" if wishlist else f"{product_id}"
-                    customer.wishlist = wishlist
-                    customer.save()
-                    return JsonResponse({"message": "Added Successfully"},
-                                        status=200)
+                    return JsonResponse({"message": "Product doesn't exists"},
+                                        status=400)
             else:
-                return JsonResponse({"message": "Product doesn't exists"},
+                return JsonResponse({"message": "Customer doesn't exists"},
                                     status=400)
         else:
-            return JsonResponse({"message": "Customer doesn't exists"},
-                                status=400)
+            return JsonResponse({'message': "Please give Customer Id"}, status=404)
 
 
 class DeleteWishlist(generics.GenericAPIView):
     def delete(self, request):
-        data = request.data
-        customer_id = data.get("customer_id", None)
-        product_id = data.get("product_id", None)
+        customer_id = request.GET.get('customer_id')
+        if customer_id:
+            data = request.data
+            product_id = data.get("product_id", None)
 
-        if Customer.objects.filter(_id=ObjectId(customer_id)):
-            customer = Customer.objects.get(_id=ObjectId(customer_id))
-            if Product.objects.filter(_id=ObjectId(product_id)):
-                if customer.wishlist:
-                    customer_wishlist = customer.wishlist.split(',')
-                    if product_id in customer_wishlist:
-                        customer_wishlist.remove(product_id)
-                        customer.wishlist = ",".join(customer_wishlist)
-                        customer.save()
-                        return JsonResponse({"message": "Deleted Successfully"},
-                                            status=200)
+            if Customer.objects.filter(_id=ObjectId(customer_id)):
+                customer = Customer.objects.get(_id=ObjectId(customer_id))
+                if Product.objects.filter(_id=ObjectId(product_id)):
+                    if customer.wishlist:
+                        customer_wishlist = customer.wishlist.split(',')
+                        if product_id in customer_wishlist:
+                            customer_wishlist.remove(product_id)
+                            customer.wishlist = ",".join(customer_wishlist)
+                            customer.save()
+                            return JsonResponse({"message": "Deleted Successfully"},
+                                                status=200)
+                        else:
+                            return JsonResponse({"message": "Product_id doesn't exists in wishlist"},
+                                                status=400)
                     else:
-                        return JsonResponse({"message": "Product_id doesn't exists in wishlist"},
-                                            status=400)
+                        return JsonResponse({"message": "Wishlist is empty"}, status=200)
                 else:
-                    return JsonResponse({"message": "Wishlist is empty"}, status=200)
+                    return JsonResponse({"message": "Product_id doesn't exists"},
+                                        status=400)
             else:
-                return JsonResponse({"message": "Product_id doesn't exists"},
+                return JsonResponse({"message": "Customer doesn't exists"},
                                     status=400)
         else:
-            return JsonResponse({"message": "Customer doesn't exists"},
-                                status=400)
+            return JsonResponse({'message': "Please give Customer Id"}, status=404)
 
 
 class ProductVariants(generics.GenericAPIView):
@@ -231,132 +239,177 @@ class ProductVariants(generics.GenericAPIView):
                             status=200)
 
 
+class OrderCustomer(generics.GenericAPIView):
+    def get(self, request):
+        customer_id = request.GET.get('customer_id')
+        if customer_id :
+            if Customer.objects.filter(_id=ObjectId(customer_id)):
+                orders = Order.objects.filter(customer_id=ObjectId(customer_id))
+                order_details = []
+                for order in orders:
+                    order_dict = model_to_dict(order)
+                    order_dict['_id'] = str(order_dict['_id'])
+                    order_dict['customer'] = str(order_dict['customer'])
+                    order_dict['payment'] = str(order_dict['payment'])
+                    order_details.append(order_dict)
+                return JsonResponse({'order_details': order_details}, status=200)
+            else:
+                return JsonResponse({'message': "Customer Id does not exists"}, status=404)
+        else:
+            return JsonResponse({'message': "Please give Customer Id"}, status=404)
+
+
+class OrderViewset(generics.GenericAPIView):
+    def get(self,request):
+
+        orders = Order.objects.all()
+        order_details = []
+        for order in orders:
+            order_dict = model_to_dict(order)
+            order_dict['_id'] = str(order_dict['_id'])
+            order_dict['customer'] = str(order_dict['customer'])
+            order_dict['payment'] = str(order_dict['payment'])
+            order_details.append(order_dict)
+        return JsonResponse({'order_details': order_details}, status=200)
+
+
 class Checkout(generics.GenericAPIView):
     def patch(self, request):
-        data = request.data
-        customer_id = data.get("customer_id", None)
-        product_id = data.get("product_id", None)
-        if Customer.objects.filter(_id=ObjectId(customer_id)):
-            customer = Customer.objects.get(_id=ObjectId(customer_id))
-            if Product.objects.filter(_id=ObjectId(product_id)):
-                customer_checkout = str(customer.checkout).split(",")
-                if product_id in customer_checkout:
-                    return JsonResponse({"message": "Product already exists"},
-                                        status=400)
+        customer_id = request.GET.get('customer_id')
+        if customer_id:
+            data = request.data
+            product_id = data.get("product_id", None)
+            if Customer.objects.filter(_id=ObjectId(customer_id)):
+                customer = Customer.objects.get(_id=ObjectId(customer_id))
+                if Product.objects.filter(_id=ObjectId(product_id)):
+                    customer_checkout = str(customer.checkout).split(",")
+                    if product_id in customer_checkout:
+                        return JsonResponse({"message": "Product already exists"},
+                                            status=400)
+                    else:
+                        checkout = customer.checkout
+                        checkout = f"{checkout},{product_id}" if checkout else f"{product_id}"
+                        customer.checkout = checkout
+                        customer.save()
                 else:
-                    checkout = customer.checkout
-                    checkout = f"{checkout},{product_id}" if checkout else f"{product_id}"
-                    customer.checkout = checkout
-                    customer.save()
+                    return JsonResponse({"message": "Product doesn't exists"},
+                                        status=400)
             else:
-                return JsonResponse({"message": "Product doesn't exists"},
+                return JsonResponse({"message": "Customer doesn't exists"},
                                     status=400)
-        else:
-            return JsonResponse({"message": "Customer doesn't exists"},
-                                status=400)
 
-        return JsonResponse({"message": "Added Successfully"},
-                            status=200)
+            return JsonResponse({"message": "Added Successfully"},
+                                status=200)
+        else:
+            return JsonResponse({'message': "Please give Customer Id"}, status=404)
 
 
 class DeleteCheckout(generics.GenericAPIView):
     def delete(self, request):
-        data = request.data
-        customer_id = data.get("customer_id", None)
-        product_id = data.get("product_id", None)
+        customer_id = request.GET.get('customer_id')
+        if customer_id:
+            data = request.data
+            product_id = data.get("product_id", None)
 
-        if Customer.objects.filter(_id=ObjectId(customer_id)):
-            customer = Customer.objects.get(_id=ObjectId(customer_id))
-            if Product.objects.filter(_id=ObjectId(product_id)):
-                if customer.checkout:
-                    customer_checkout = customer.checkout.split(',')
-                    if product_id in customer_checkout:
-                        customer_checkout.remove(product_id)
-                        customer.checkout = ",".join(customer_checkout)
-                        customer.save()
+            if Customer.objects.filter(_id=ObjectId(customer_id)):
+                customer = Customer.objects.get(_id=ObjectId(customer_id))
+                if Product.objects.filter(_id=ObjectId(product_id)):
+                    if customer.checkout:
+                        customer_checkout = customer.checkout.split(',')
+                        if product_id in customer_checkout:
+                            customer_checkout.remove(product_id)
+                            customer.checkout = ",".join(customer_checkout)
+                            customer.save()
+                        else:
+                            return JsonResponse({"message": "Product_id doesn't exists in checkout_session"},
+                                                status=400)
                     else:
-                        return JsonResponse({"message": "Product_id doesn't exists in checkout_session"},
-                                            status=400)
+                        return JsonResponse({"message": "Checkout is empty"}, status=200)
                 else:
-                    return JsonResponse({"message": "Checkout is empty"}, status=200)
+                    return JsonResponse({"message": "Product_id doesn't exists"},
+                                        status=400)
             else:
-                return JsonResponse({"message": "Product_id doesn't exists"},
+                return JsonResponse({"message": "Customer doesn't exists"},
                                     status=400)
-        else:
-            return JsonResponse({"message": "Customer doesn't exists"},
-                                status=400)
 
-        return JsonResponse({"message": "Deleted Successfully"},
-                            status=200)
+            return JsonResponse({"message": "Deleted Successfully"},
+                                status=200)
+        else:
+            return JsonResponse({'message': "Please give Customer Id"}, status=404)
 
 
 class TotalAmount(generics.GenericAPIView):
     def post(self, request):
-        data = request.data
-        customer_id = data.get("customer_id", None)
-        quantity = data.get("quantity", {})
-        voucher = data.get("voucher", None)
-        discount = data.get("discount", None)
-        customer = Customer.objects.get(_id=ObjectId(customer_id))
-        customer_checkout = str(customer.checkout).split(",")
-        total_amount = 0
-        amount = 0
-        num = None
-        validate_product = []
-        for product_id, qty in quantity.items():
-            validate_product.append(product_id)
-
-        if validate_product != customer_checkout:
-            return JsonResponse({"Product doesn't match"}, status=404)
-
-        else:
-
-            if voucher == "" or discount:
-                for i in range(len(discount)):
-                    if discount[i].isdigit():
-                        num = discount[i:]
-                        break
-                disc = int(num)
+        customer_id = request.GET.get('customer_id')
+        if customer_id:
+            if Customer.objects.filter(_id=ObjectId(customer_id)):
+                data = request.data
+                quantity = data.get("quantity", {})
+                voucher = data.get("voucher", None)
+                discount = data.get("discount", None)
+                customer = Customer.objects.get(_id=ObjectId(customer_id))
+                customer_checkout = str(customer.checkout).split(",")
+                total_amount = 0
+                amount = 0
+                num = None
+                validate_product = []
                 for product_id, qty in quantity.items():
-                    product = Product.objects.get(_id=ObjectId(product_id))
-                    product_price = product.price
-                    product_discount = int(float(product.discount))
-                    price = product_price - (product_price * (product_discount / 100))
-                    amount += price * int(qty)
-                total_amount = ("{:.2f}".format(amount - (amount * (disc / 100))))
-                customer.discount="You have already used"
-                customer.discount_value=False
-                customer.save()
-                return JsonResponse({"Total Amount": total_amount}, status=200)
+                    validate_product.append(product_id)
 
-            elif discount == "" or voucher:
-                for i in range(len(voucher)):
-                    if voucher[i].isdigit():
-                        num = voucher[i:]
-                        break
-                vouch = int(num)
-                for product_id, qty in quantity.items():
-                    product = Product.objects.get(_id=ObjectId(product_id))
-                    product_price = product.price
-                    product_discount = int(float(product.discount))
-                    price = product_price - (product_price * (product_discount / 100))
-                    amount += price * int(qty)
-                total_amount = ("{:.2f}".format(amount - (amount * (vouch / 100))))
-                customer.voucher = "You have already used"
-                customer.voucher_value=False
-                customer.save()
+                if validate_product.sort() != customer_checkout.sort():
+                    return JsonResponse({"Product doesn't match"}, status=404)
 
-                return JsonResponse({"Total Amount": total_amount}, status=200)
+                else:
+                    if voucher == "" or discount:
+                        for i in range(len(discount)):
+                            if discount[i].isdigit():
+                                num = discount[i:]
+                                break
+                        disc = int(num)
+                        for product_id, qty in quantity.items():
+                            product = Product.objects.get(_id=ObjectId(product_id))
+                            product_price = product.price
+                            product_discount = int(float(product.discount))
+                            price = product_price - (product_price * (product_discount / 100))
+                            amount += price * int(qty)
+                        total_amount = ("{:.2f}".format(amount - (amount * (disc / 100))))
+                        customer.discount = "You have already used"
+                        customer.discount_value = False
+                        customer.save()
+                        return JsonResponse({"Total Amount": total_amount}, status=200)
 
+                    elif discount == "" or voucher:
+                        for i in range(len(voucher)):
+                            if voucher[i].isdigit():
+                                num = voucher[i:]
+                                break
+                        vouch = int(num)
+                        for product_id, qty in quantity.items():
+                            product = Product.objects.get(_id=ObjectId(product_id))
+                            product_price = product.price
+                            product_discount = int(float(product.discount))
+                            price = product_price - (product_price * (product_discount / 100))
+                            amount += price * int(qty)
+                        total_amount = ("{:.2f}".format(amount - (amount * (vouch / 100))))
+                        customer.voucher = "You have already used"
+                        customer.voucher_value = False
+                        customer.save()
+
+                        return JsonResponse({"Total Amount": total_amount}, status=200)
+
+                    else:
+                        for product_id, qty in quantity.items():
+                            product = Product.objects.get(_id=ObjectId(product_id))
+                            product_price = product.price
+                            product_discount = int(float(product.discount))
+                            price = product_price - (product_price * (product_discount / 100))
+                            amount += price * int(qty)
+                        total_amount = ("{:.2f}".format(amount))
+                    return JsonResponse({"Total Amount": total_amount}, status=200)
             else:
-                for product_id, qty in quantity.items():
-                    product = Product.objects.get(_id=ObjectId(product_id))
-                    product_price = product.price
-                    product_discount = int(float(product.discount))
-                    price = product_price - (product_price * (product_discount / 100))
-                    amount += price * int(qty)
-                total_amount = ("{:.2f}".format(amount))
-            return JsonResponse({"Total Amount": total_amount}, status=200)
+                return JsonResponse({'message': "Customer Id does not exists"}, status=404)
+        else:
+            return JsonResponse({'message': "Please give Customer Id"}, status=404)
 
 
 class GuestLogin(generics.GenericAPIView):
@@ -448,29 +501,32 @@ def google_login(request):
 
 class UserUpdatePassword(generics.GenericAPIView):
     def patch(self, request):
-        data = request.data
-        customer_id = data.get("customer_id", None)
-        password = data.get("password", None)
-        confirm_password = data.get("confirm_password", None)
+        customer_id = request.GET.get('customer_id')
+        if customer_id:
+            data = request.data
+            password = data.get("password", None)
+            confirm_password = data.get("confirm_password", None)
 
-        if password != confirm_password:
-            return JsonResponse({"message": "Password doesn't match"},
-                                status=406)
-        else:
-            if Customer.objects.filter(_id=ObjectId(customer_id)):
-                customer = Customer.objects.get(_id=ObjectId(customer_id))
-                user_id = customer.user_id
-                user = User.objects.get(id=user_id)
-                if user.password:
-                    return JsonResponse({"message": "Password already stored"},
-                                        status=403)
-                else:
-                    user.password = make_password(confirm_password)
-                    user.save()
-                    customer.guest_login = False
-                    customer.save()
-                    return JsonResponse({"message": "Password stored successfully"},
-                                        status=200)
+            if password != confirm_password:
+                return JsonResponse({"message": "Password doesn't match"},
+                                    status=406)
             else:
-                return JsonResponse({"message": "Customer doest not exists"},
-                                    status=400)
+                if Customer.objects.filter(_id=ObjectId(customer_id)):
+                    customer = Customer.objects.get(_id=ObjectId(customer_id))
+                    user_id = customer.user_id
+                    user = User.objects.get(id=user_id)
+                    if user.password:
+                        return JsonResponse({"message": "Password already stored"},
+                                            status=403)
+                    else:
+                        user.password = make_password(confirm_password)
+                        user.save()
+                        customer.guest_login = False
+                        customer.save()
+                        return JsonResponse({"message": "Password stored successfully"},
+                                            status=200)
+                else:
+                    return JsonResponse({"message": "Customer doest not exists"},
+                                        status=400)
+        else:
+            return JsonResponse({'message': "Please give Customer Id"}, status=404)
