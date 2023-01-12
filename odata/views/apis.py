@@ -37,7 +37,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     """This viewset is used for crud operations"""
 
     model = Product
-    queryset = Product.objects.none()
+    queryset = Product.objects.all()
     serializer_class = ProductSerializers
 
     def get_object(self):
@@ -87,7 +87,7 @@ class ProductImageViewSet(viewsets.ModelViewSet):
     """This viewset is used for crud operations"""
 
     model = ProductImage
-    queryset = ProductImage.objects.none()
+    queryset = ProductImage.objects.all()
     serializer_class = ProductImageSerializers
 
     def get_object(self):
@@ -103,7 +103,7 @@ class ProductImageViewSet(viewsets.ModelViewSet):
 class NewsLetterViewSet(viewsets.ModelViewSet):
     """This viewset is used for crud operations"""
 
-    queryset = NewsletterSubscription.objects.none()
+    queryset = NewsletterSubscription.objects.all()
     serializer_class = NewsLetterSerializers
 
     # permission_classes = [IsAuthenticated]
@@ -127,7 +127,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
 class CategoryViewSet(viewsets.ModelViewSet):
     """This viewset is used for crud operations"""
 
-    queryset = Categories.objects.none()
+    queryset = Categories.objects.all()
     serializer_class = CategorySerializers
 
     def get_object(self):
