@@ -4,8 +4,7 @@ from bson import ObjectId
 from rest_framework.views import APIView
 from django.http import HttpResponse, JsonResponse
 import paypalrestsdk
-from django.core.mail import send_mail
-from Project.settings import EMAIL_HOST_USER
+from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import redirect
 from odata.utility.send_receipt_mail import send_mail_paypal
 from Project.settings import PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET
@@ -66,8 +65,10 @@ class Paypal(APIView):
         else:
             return JsonResponse({"error": payment.error}, status=500)
 
+    permission_classes = [IsAuthenticated]
     def post(self, request):
-        customer_id = request.GET.get('customer_id')
+        user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
+        customer_id = (Customer.objects.get(user_id=user_id))._id
         if customer_id:
             if Customer.objects.filter(_id=ObjectId(customer_id)):
                 data = request.POST.dict()
