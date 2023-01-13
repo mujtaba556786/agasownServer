@@ -150,13 +150,16 @@ class PaymentViewset(viewsets.ModelViewSet):
 
 
 class Wishlist(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
     def patch(self, request):
-        customer_id = request.GET.get('customer_id')
+        user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
+        customer_id = (Customer.objects.get(user_id=user_id))._id
         if customer_id:
             data = request.data
             product_id = data.get("product_id", None)
-            if Customer.objects.filter(_id=ObjectId(customer_id)):
-                customer = Customer.objects.get(_id=ObjectId(customer_id))
+            if Customer.objects.filter(_id=customer_id):
+                customer = Customer.objects.get(_id=customer_id)
                 if Product.objects.filter(_id=ObjectId(product_id)):
                     customer_wishlist = str(customer.wishlist).split(",")
                     if product_id in customer_wishlist:
@@ -242,7 +245,7 @@ class ProductVariants(generics.GenericAPIView):
 class OrderCustomer(generics.GenericAPIView):
     def get(self, request):
         customer_id = request.GET.get('customer_id')
-        if customer_id :
+        if customer_id:
             if Customer.objects.filter(_id=ObjectId(customer_id)):
                 orders = Order.objects.filter(customer_id=ObjectId(customer_id))
                 order_details = []
@@ -260,8 +263,7 @@ class OrderCustomer(generics.GenericAPIView):
 
 
 class OrderViewset(generics.GenericAPIView):
-    def get(self,request):
-
+    def get(self, request):
         orders = Order.objects.all()
         order_details = []
         for order in orders:
