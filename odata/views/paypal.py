@@ -19,6 +19,8 @@ paypalrestsdk.configure({
 
 
 class Paypal(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         payment_id = request.GET["paymentId"]
         payer_id = request.GET["PayerID"]
@@ -41,31 +43,32 @@ class Paypal(APIView):
             order_count = str(Order.objects.count())
 
             customer = Customer.objects.get(_id=customer_objectID)
-            if not customer:
-                return HttpResponse("Customer doesn't exists")
+            checkout = customer.checkout
+            if customer:
+                if checkout:
+                    payment = Payment(invoice=f"AGASOWN_{invoice_date}_{invoice_count}",
+                                      payment_type="PAYPAL", customer=customer,
+                                      status=payment_status, date_of_payment=date, amount=payment_amount)
 
+                    payment.save()
+
+                    order = Order(customer=customer, order_number=order_count, order_date=date, paid=True,
+                                  payment=payment, product_id=checkout)
+                    order.save()
+                    customer.checkout = None
+                    customer.save()
+                    send_mail_paypal(first_name=first_name, last_name=last_name,
+                                     total_amount=total_amount, email=email)
+
+                    return redirect("http://64.227.115.243/index.html#/payment",
+                                    status=200)
+                else:
+                    return HttpResponse("Checkout is empty")
             else:
-                payment = Payment(invoice=f"AGASOWN_{invoice_date}_{invoice_count}",
-                                  payment_type="PAYPAL", customer=customer,
-                                  status=payment_status, date_of_payment=date, amount=payment_amount)
-
-                payment.save()
-                checkout = customer.checkout
-                order = Order(customer=customer, order_number=order_count, order_date=date, paid=True,
-                              payment=payment, product_id=checkout)
-                order.save()
-                customer.checkout = None
-                customer.save()
-                send_mail_paypal(first_name=first_name, last_name=last_name,
-                                 total_amount=total_amount, email=email)
-
-                return redirect("http://64.227.115.243/index.html#/payment",
-                                status=200)
-
+                return HttpResponse("Customer doesn't exists")
         else:
             return JsonResponse({"error": payment.error}, status=500)
 
-    permission_classes = [IsAuthenticated]
     def post(self, request):
         user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
         customer_id = (Customer.objects.get(user_id=user_id))._id

@@ -135,23 +135,27 @@ class StripeCard(APIView):
                         payment_status = retrieve.charges.data[0].status
                         invoice_count = Payment.objects.count()
                         order_count = str(Order.objects.count())
-
-                        payment = Payment(invoice=f"AGASOWN_{date}_{invoice_count}", customer=customer,
-                                          payment_type=payment_method_type, status=payment_status,
-                                          date_of_payment=date_of_payment, amount=total_amount)
-                        payment.save()
                         checkout = customer.checkout
-                        order = Order(customer=customer, order_number=order_count, order_date=date, paid=True,
-                                      payment=payment, product_id=checkout)
-                        order.save()
-                        customer.checkout = None
-                        customer.save()
-                        send_mail_card(
-                            customer_email=email, retrieve_url=receipt_url, name=name,
-                            payment_method_type=payment_method_type, card_brand=card_brand, last_digits=last_digits,
-                            card_type=card_type
-                        )
 
+                        if checkout:
+
+                            payment = Payment(invoice=f"AGASOWN_{date}_{invoice_count}", customer=customer,
+                                              payment_type=payment_method_type, status=payment_status,
+                                              date_of_payment=date_of_payment, amount=total_amount)
+                            payment.save()
+
+                            order = Order(customer=customer, order_number=order_count, order_date=date, paid=True,
+                                          payment=payment, product_id=checkout)
+                            order.save()
+                            customer.checkout = None
+                            customer.save()
+                            send_mail_card(
+                                customer_email=email, retrieve_url=receipt_url, name=name,
+                                payment_method_type=payment_method_type, card_brand=card_brand, last_digits=last_digits,
+                                card_type=card_type
+                            )
+                        else:
+                            return JsonResponse({'message': "Checkout is empty"}, status=404)
                     except stripe.error.CardError as e:
                         return response.Response(
                             {"msg": e.user_message},
@@ -193,6 +197,7 @@ class StripeCard(APIView):
 
 
 class StripSofort(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
         payment_id = request.GET["payment_intent"]
         customer_id = request.GET['customer_id']
@@ -214,26 +219,27 @@ class StripSofort(APIView):
         order_count = str(Order.objects.count())
 
         customer = Customer.objects.get(_id=customer_objectID)
-        if not customer:
-            return HttpResponse("Customer doesn't exists")
+        checkout=customer.checkout
+        if customer:
+            if customer:
+                payment = Payment(invoice=f"AGASOWN_{date}_{invoice_count}", payment_type=payment_type, customer=customer,
+                                  status=payment_status, date_of_payment=date_of_payment, amount=amount)
+                payment.save()
+                order = Order(customer=customer, order_number=order_count, order_date=date, paid=True,
+                              payment=payment, product_id=checkout)
+                order.save()
+                customer.checkout = None
+                customer.save()
+                send_mail_sofort(customer_email=customer_email, customer_name=customer_name,
+                                 bank_name=bank_name, bank_code=bank_code, payment_type=payment_type,
+                                 last_digits=last_digits)
+
+                return redirect("http://64.227.115.243/index.html#/payment",
+                                status=200)
+            else:
+                return JsonResponse({'message': "Checkout is empty"}, status=404)
         else:
-            payment = Payment(invoice=f"AGASOWN_{date}_{invoice_count}", payment_type=payment_type, customer=customer,
-                              status=payment_status, date_of_payment=date_of_payment, amount=amount)
-            payment.save()
-            checkout = customer.checkout
-            order = Order(customer=customer, order_number=order_count, order_date=date, paid=True,
-                          payment=payment, product_id=checkout)
-            order.save()
-            customer.checkout = None
-            customer.save()
-            send_mail_sofort(customer_email=customer_email, customer_name=customer_name,
-                             bank_name=bank_name, bank_code=bank_code, payment_type=payment_type,
-                             last_digits=last_digits)
-
-            return redirect("http://64.227.115.243/index.html#/payment",
-                            status=200)
-
-    permission_classes = [IsAuthenticated]
+            return JsonResponse({'message': "Customer does not exists"}, status=404)
 
     def post(self, request):
         user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
