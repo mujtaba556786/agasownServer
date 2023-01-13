@@ -141,7 +141,7 @@ class PaymentViewset(viewsets.ModelViewSet):
     This viewset is used for crud operation
     """
 
-    queryset = Payment.objects.all()
+    queryset = Payment.objects.none()
     serializer_class = PaymentSerializers
     permission_classes = [IsAuthenticated]
 
@@ -247,6 +247,7 @@ class ProductVariants(generics.GenericAPIView):
 
 class OrderCustomer(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+
     def get(self, request):
         user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
         customer_id = (Customer.objects.get(user_id=user_id))._id
@@ -282,6 +283,7 @@ class OrderViewset(generics.GenericAPIView):
 
 class Checkout(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+
     def patch(self, request):
         user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
         customer_id = (Customer.objects.get(user_id=user_id))._id
@@ -315,6 +317,7 @@ class Checkout(generics.GenericAPIView):
 
 class DeleteCheckout(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+
     def delete(self, request):
         user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
         customer_id = (Customer.objects.get(user_id=user_id))._id
@@ -351,6 +354,7 @@ class DeleteCheckout(generics.GenericAPIView):
 
 class TotalAmount(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+
     def post(self, request):
         user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
         customer_id = (Customer.objects.get(user_id=user_id))._id
@@ -433,12 +437,14 @@ class GuestLogin(generics.GenericAPIView):
         email = data.get("email", None)
 
         user_email = User.objects.filter(email=email)
+        import pdb; pdb.set_trace()
 
         if user_email:
             user = User.objects.get(email=user_email[0])
+            customer_id=user.id
             email = User.objects.filter(email=email)[0]
             token = get_access_token(email)
-            return JsonResponse({"message": "Email_Id already exists", "token": token},
+            return JsonResponse({"message": "Email_Id already exists", "token": token, "customer_id": customer_id},
                                 status=200)
         else:
             try:
@@ -511,6 +517,7 @@ def google_login(request):
 
 class UserUpdatePassword(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+
     def patch(self, request):
         user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
         customer_id = (Customer.objects.get(user_id=user_id))._id
