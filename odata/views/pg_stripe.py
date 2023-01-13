@@ -16,7 +16,7 @@ from django.views.generic import TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from odata.utility.send_receipt_mail import send_mail_card, send_mail_sofort
 from django.http.response import HttpResponse, JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from rest_framework.permissions import IsAuthenticated
 from odata.models import Product, Payment, Customer
 from Project.settings import STRIPE_SECRET_KEY, STRIPE_PUBLISH_KEY, DOMAIN_URL
 from bson import ObjectId
@@ -41,8 +41,11 @@ class StipeCheckoutSession(TemplateView):
 
 # API for credit_cards payment
 class StripeCard(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
-        customer_id = request.GET.get('customer_id')
+        user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
+        customer_id = (Customer.objects.get(user_id=user_id))._id
         if customer_id:
             if Customer.objects.filter(_id=ObjectId(customer_id)):
                 data = request.POST.dict()
@@ -188,6 +191,7 @@ class StripeCard(APIView):
         else:
             return JsonResponse({'message': "Please give Customer Id"}, status=404)
 
+
 class StripSofort(APIView):
     def get(self, request):
         payment_id = request.GET["payment_intent"]
@@ -195,7 +199,7 @@ class StripSofort(APIView):
         customer_objectID = ObjectId(customer_id)
         retrieve_customer = stripe.PaymentIntent.retrieve(payment_id)
         bank_code = retrieve_customer.charges.data[0].payment_method_details.sofort.bank_code
-        amount= retrieve_customer.charges.data[0].amount/100
+        amount = retrieve_customer.charges.data[0].amount / 100
         bank_name = retrieve_customer.charges.data[0].payment_method_details.sofort.bank_name
         payment_type = retrieve_customer.charges.data[0].payment_method_details.type
         last_digits = retrieve_customer.charges.data[0].payment_method_details.sofort.iban_last4
@@ -206,7 +210,7 @@ class StripSofort(APIView):
         customer_email = cus_detials.email
         date_of_payment = datetime.fromtimestamp(cus_detials.created).strftime("%Y-%m-%d")
         date = datetime.fromtimestamp(cus_detials.created).strftime("%Y%m%d")
-        invoice_count= Payment.objects.count()
+        invoice_count = Payment.objects.count()
         order_count = str(Order.objects.count())
 
         customer = Customer.objects.get(_id=customer_objectID)
@@ -214,7 +218,7 @@ class StripSofort(APIView):
             return HttpResponse("Customer doesn't exists")
         else:
             payment = Payment(invoice=f"AGASOWN_{date}_{invoice_count}", payment_type=payment_type, customer=customer,
-                              status=payment_status, date_of_payment=date_of_payment,amount=amount)
+                              status=payment_status, date_of_payment=date_of_payment, amount=amount)
             payment.save()
             checkout = customer.checkout
             order = Order(customer=customer, order_number=order_count, order_date=date, paid=True,
@@ -229,8 +233,11 @@ class StripSofort(APIView):
             return redirect("http://64.227.115.243/index.html#/payment",
                             status=200)
 
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
-        customer_id = request.GET.get('customer_id')
+        user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
+        customer_id = (Customer.objects.get(user_id=user_id))._id
         if customer_id:
             if Customer.objects.filter(_id=ObjectId(customer_id)):
                 data = request.POST.dict()
@@ -315,6 +322,7 @@ class StripSofort(APIView):
                 return JsonResponse({'message': "Customer Id does not exists"}, status=404)
         else:
             return JsonResponse({'message': "Please give Customer Id"}, status=404)
+
 
 class CreateCheckoutSession(APIView):
     """Class to create CheckoutSession

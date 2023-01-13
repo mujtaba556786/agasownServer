@@ -105,7 +105,7 @@ class ProductImageViewSet(viewsets.ModelViewSet):
 class NewsLetterViewSet(viewsets.ModelViewSet):
     """This viewset is used for crud operations"""
 
-    queryset = NewsletterSubscription.objects.all()
+    queryset = NewsletterSubscription.objects.none()
     serializer_class = NewsLetterSerializers
 
     # permission_classes = [IsAuthenticated]
@@ -141,7 +141,7 @@ class PaymentViewset(viewsets.ModelViewSet):
     This viewset is used for crud operation
     """
 
-    queryset = Payment.objects.none()
+    queryset = Payment.objects.all()
     serializer_class = PaymentSerializers
     permission_classes = [IsAuthenticated]
 
@@ -183,14 +183,17 @@ class Wishlist(generics.GenericAPIView):
 
 
 class DeleteWishlist(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
     def delete(self, request):
-        customer_id = request.GET.get('customer_id')
+        user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
+        customer_id = (Customer.objects.get(user_id=user_id))._id
         if customer_id:
             data = request.data
             product_id = data.get("product_id", None)
 
-            if Customer.objects.filter(_id=ObjectId(customer_id)):
-                customer = Customer.objects.get(_id=ObjectId(customer_id))
+            if Customer.objects.filter(_id=customer_id):
+                customer = Customer.objects.get(_id=customer_id)
                 if Product.objects.filter(_id=ObjectId(product_id)):
                     if customer.wishlist:
                         customer_wishlist = customer.wishlist.split(',')
@@ -243,11 +246,13 @@ class ProductVariants(generics.GenericAPIView):
 
 
 class OrderCustomer(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
     def get(self, request):
-        customer_id = request.GET.get('customer_id')
+        user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
+        customer_id = (Customer.objects.get(user_id=user_id))._id
         if customer_id:
-            if Customer.objects.filter(_id=ObjectId(customer_id)):
-                orders = Order.objects.filter(customer_id=ObjectId(customer_id))
+            if Customer.objects.filter(_id=customer_id):
+                orders = Order.objects.filter(customer_id=customer_id)
                 order_details = []
                 for order in orders:
                     order_dict = model_to_dict(order)
@@ -276,13 +281,15 @@ class OrderViewset(generics.GenericAPIView):
 
 
 class Checkout(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
     def patch(self, request):
-        customer_id = request.GET.get('customer_id')
+        user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
+        customer_id = (Customer.objects.get(user_id=user_id))._id
         if customer_id:
             data = request.data
             product_id = data.get("product_id", None)
-            if Customer.objects.filter(_id=ObjectId(customer_id)):
-                customer = Customer.objects.get(_id=ObjectId(customer_id))
+            if Customer.objects.filter(_id=customer_id):
+                customer = Customer.objects.get(_id=customer_id)
                 if Product.objects.filter(_id=ObjectId(product_id)):
                     customer_checkout = str(customer.checkout).split(",")
                     if product_id in customer_checkout:
@@ -307,14 +314,16 @@ class Checkout(generics.GenericAPIView):
 
 
 class DeleteCheckout(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
     def delete(self, request):
-        customer_id = request.GET.get('customer_id')
+        user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
+        customer_id = (Customer.objects.get(user_id=user_id))._id
         if customer_id:
             data = request.data
             product_id = data.get("product_id", None)
 
-            if Customer.objects.filter(_id=ObjectId(customer_id)):
-                customer = Customer.objects.get(_id=ObjectId(customer_id))
+            if Customer.objects.filter(_id=customer_id):
+                customer = Customer.objects.get(_id=customer_id)
                 if Product.objects.filter(_id=ObjectId(product_id)):
                     if customer.checkout:
                         customer_checkout = customer.checkout.split(',')
@@ -341,10 +350,12 @@ class DeleteCheckout(generics.GenericAPIView):
 
 
 class TotalAmount(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
     def post(self, request):
-        customer_id = request.GET.get('customer_id')
+        user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
+        customer_id = (Customer.objects.get(user_id=user_id))._id
         if customer_id:
-            if Customer.objects.filter(_id=ObjectId(customer_id)):
+            if Customer.objects.filter(_id=customer_id):
                 data = request.data
                 quantity = data.get("quantity", {})
                 voucher = data.get("voucher", None)
@@ -425,12 +436,9 @@ class GuestLogin(generics.GenericAPIView):
 
         if user_email:
             user = User.objects.get(email=user_email[0])
-            user_id = user.id
-            customer = Customer.objects.get(user=user_id)
-            customer_id = str(customer.user_id)
             email = User.objects.filter(email=email)[0]
             token = get_access_token(email)
-            return JsonResponse({"message": "Email_Id already exists", "token": token, "customer_id": customer_id},
+            return JsonResponse({"message": "Email_Id already exists", "token": token},
                                 status=200)
         else:
             try:
@@ -502,8 +510,10 @@ def google_login(request):
 
 
 class UserUpdatePassword(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
     def patch(self, request):
-        customer_id = request.GET.get('customer_id')
+        user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
+        customer_id = (Customer.objects.get(user_id=user_id))._id
         if customer_id:
             data = request.data
             password = data.get("password", None)
@@ -513,8 +523,8 @@ class UserUpdatePassword(generics.GenericAPIView):
                 return JsonResponse({"message": "Password doesn't match"},
                                     status=406)
             else:
-                if Customer.objects.filter(_id=ObjectId(customer_id)):
-                    customer = Customer.objects.get(_id=ObjectId(customer_id))
+                if Customer.objects.filter(_id=customer_id):
+                    customer = Customer.objects.get(_id=customer_id)
                     user_id = customer.user_id
                     user = User.objects.get(id=user_id)
                     if user.password:
