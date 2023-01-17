@@ -61,9 +61,9 @@ class PaypalGet(APIView):
                     return redirect("http://64.227.115.243/index.html#/payment",
                                     status=200)
                 else:
-                    return HttpResponse("Checkout is empty")
+                    return JsonResponse({'message': "Checkout is empty"}, status=404)
             else:
-                return HttpResponse("Customer doesn't exists")
+                return JsonResponse({'message': "Customer does not exists"}, status=404)
         else:
             return JsonResponse({"error": payment.error}, status=500)
 
