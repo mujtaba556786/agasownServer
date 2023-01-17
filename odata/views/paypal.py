@@ -88,8 +88,8 @@ class Paypal(APIView):
                             "payment_method": "paypal"
                         },
                         "redirect_urls": {
-                            "return_url": f"http://127.0.0.1:8000/paypal/payment_get/?customer_id={customer_id}",
-                            "cancel_url": "http://127.0.0.1:8000/"},
+                            "return_url": f"http://64.227.115.243:8080/paypal/payment_get/?customer_id={customer_id}",
+                            "cancel_url": "http://64.227.115.243:8080/"},
                         "transactions": [
                             {
                                 "amount": {
