@@ -61,9 +61,9 @@ class PaypalGet(APIView):
                     return redirect("http://64.227.115.243/index.html#/payment",
                                     status=200)
                 else:
-                    return HttpResponse("Checkout is empty")
+                    return JsonResponse({'message': "Checkout is empty"}, status=404)
             else:
-                return HttpResponse("Customer doesn't exists")
+                return JsonResponse({'message': "Customer does not exists"}, status=404)
         else:
             return JsonResponse({"error": payment.error}, status=500)
 
@@ -77,32 +77,36 @@ class Paypal(APIView):
         customer_id = (Customer.objects.get(user_id=user_id))._id
         if customer_id:
             if Customer.objects.filter(_id=ObjectId(customer_id)):
-                data = request.POST.dict()
-                currency = data.get("currency")
-                total = data.get("total_amount")
-                payment = paypalrestsdk.Payment({
-                    "intent": "sale",
-                    "payer": {
-                        "payment_method": "paypal"
-                    },
-                    "redirect_urls": {
-                        "return_url": f"http://64.227.115.243:8080/paypal/payment_get/?customer_id={customer_id}",
-                        "cancel_url": "http://64.227.115.243:8080/"},
-                    "transactions": [
-                        {
-                            "amount": {
-                                "total": float(total),
-                                "currency": currency
-                            },
-                            "description": "This is the payment transaction description."}]})
+                customer = Customer.objects.get(_id=ObjectId(customer_id))
+                if customer.checkout:
+                    data = request.POST.dict()
+                    currency = data.get("currency")
+                    total = data.get("total_amount")
+                    payment = paypalrestsdk.Payment({
+                        "intent": "sale",
+                        "payer": {
+                            "payment_method": "paypal"
+                        },
+                        "redirect_urls": {
+                            "return_url": f"http://127.0.0.1:8000/paypal/payment_get/?customer_id={customer_id}",
+                            "cancel_url": "http://127.0.0.1:8000/"},
+                        "transactions": [
+                            {
+                                "amount": {
+                                    "total": float(total),
+                                    "currency": currency
+                                },
+                                "description": "This is the payment transaction description."}]})
 
-                if payment.create():  # Authorizing payment
-                    for link in payment.links:
-                        if link.rel == "approval_url":
-                            approval_url = str(link.href)
-                            return HttpResponse({approval_url})
+                    if payment.create():  # Authorizing payment
+                        for link in payment.links:
+                            if link.rel == "approval_url":
+                                approval_url = str(link.href)
+                                return HttpResponse({approval_url})
+                    else:
+                        return JsonResponse({"error": payment.error}, status=400)
                 else:
-                    return JsonResponse({"error": payment.error}, status=400)
+                    return JsonResponse({"message": "Checkout is empty"}, status=404)
             else:
                 return JsonResponse({'message': "Customer Id does not exists"}, status=404)
         else:
