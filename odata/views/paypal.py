@@ -18,9 +18,7 @@ paypalrestsdk.configure({
 })
 
 
-class Paypal(APIView):
-    permission_classes = [IsAuthenticated]
-
+class PaypalGet(APIView):
     def get(self, request):
         payment_id = request.GET["paymentId"]
         payer_id = request.GET["PayerID"]
@@ -69,7 +67,12 @@ class Paypal(APIView):
         else:
             return JsonResponse({"error": payment.error}, status=500)
 
+
+class Paypal(APIView):
+    permission_classes = [IsAuthenticated]
+
     def post(self, request):
+        access_token = request.__dict__.get('_auth')
         user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
         customer_id = (Customer.objects.get(user_id=user_id))._id
         if customer_id:
@@ -83,7 +86,7 @@ class Paypal(APIView):
                         "payment_method": "paypal"
                     },
                     "redirect_urls": {
-                        "return_url": f"http://64.227.115.243:8080/paypal/payment/?customer_id={customer_id}",
+                        "return_url": f"http://64.227.115.243:8080/paypal/payment_get/?customer_id={customer_id}",
                         "cancel_url": "http://64.227.115.243:8080/"},
                     "transactions": [
                         {
