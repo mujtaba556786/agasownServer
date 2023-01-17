@@ -250,84 +250,88 @@ class StripSofort(APIView):
         customer_id = (Customer.objects.get(user_id=user_id))._id
         if customer_id:
             if Customer.objects.filter(_id=ObjectId(customer_id)):
-                data = request.POST.dict()
-                name = data.get("name")
-                email = data.get("email")
-                cus_add_line1 = data.get("cus_add_line1")
-                cus_add_city = data.get("cus_add_city")
-                cus_add_state = data.get("cus_add_state")
-                amount = float(data.get("amount"))
-                currency = data.get("currency")
-                country = data.get("country")
-                postal_code = data.get("postal_code")
-                description = data.get("description")
+                customer = Customer.objects.get(_id=ObjectId(customer_id))
+                if customer.checkout:
+                    data = request.POST.dict()
+                    name = data.get("name")
+                    email = data.get("email")
+                    cus_add_line1 = data.get("cus_add_line1")
+                    cus_add_city = data.get("cus_add_city")
+                    cus_add_state = data.get("cus_add_state")
+                    amount = float(data.get("amount"))
+                    currency = data.get("currency")
+                    country = data.get("country")
+                    postal_code = data.get("postal_code")
+                    description = data.get("description")
 
-                try:
-                    amount = int(amount * 100)
-                    payment_method = stripe.PaymentMethod.create(
-                        type="sofort",
-                        sofort={
-                            "country": country,
-                        },
-                    )
+                    try:
+                        amount = int(amount * 100)
+                        payment_method = stripe.PaymentMethod.create(
+                            type="sofort",
+                            sofort={
+                                "country": country,
+                            },
+                        )
 
-                    customer = stripe.Customer.create(
-                        description="My First Sofort Test Customer",
-                        name=name,
-                        email=email,
-                        address={
-                            "line1": cus_add_line1,
-                            "city": cus_add_city,
-                            "state": cus_add_state,
-                            "country": country,
-                            "postal_code": postal_code,
-                        },
-                        shipping={
-                            "name": "Agasown",
-                            "address": {
-                                "line1": "Bergmannstraße 13",
-                                "city": "Berlin",
-                                "state": "Germany",
+                        customer = stripe.Customer.create(
+                            description="My First Sofort Test Customer",
+                            name=name,
+                            email=email,
+                            address={
+                                "line1": cus_add_line1,
+                                "city": cus_add_city,
+                                "state": cus_add_state,
+                                "country": country,
+                                "postal_code": postal_code,
+                            },
+                            shipping={
+                                "name": "Agasown",
+                                "address": {
+                                    "line1": "Bergmannstraße 13",
+                                    "city": "Berlin",
+                                    "state": "Germany",
+                                }
                             }
-                        }
-                    )
+                        )
 
-                    payment_intent = stripe.PaymentIntent.create(
-                        description=description,
-                        amount=amount,
-                        currency=currency,
-                        customer=customer["id"],
-                        payment_method=payment_method["id"],
-                        payment_method_types=["sofort"],
+                        payment_intent = stripe.PaymentIntent.create(
+                            description=description,
+                            amount=amount,
+                            currency=currency,
+                            customer=customer["id"],
+                            payment_method=payment_method["id"],
+                            payment_method_types=["sofort"],
 
-                    )
+                        )
 
-                    confirm_payment = stripe.PaymentIntent.confirm(
-                        payment_intent["id"],
-                        payment_method=payment_intent["payment_method"],
-                        return_url=f"http://64.227.115.243:8080/stripe/sofort_get/?customer_id={customer_id}",
-                        receipt_email=email,
-                    )
-                    url = confirm_payment["next_action"]
-                    check_url = url["redirect_to_url"]
-                    authenticate_url = check_url["url"]
+                        confirm_payment = stripe.PaymentIntent.confirm(
+                            payment_intent["id"],
+                            payment_method=payment_intent["payment_method"],
+                            return_url=f"http://64.227.115.243:8080/stripe/sofort_get/?customer_id={customer_id}",
+                            receipt_email=email,
+                        )
+                        url = confirm_payment["next_action"]
+                        check_url = url["redirect_to_url"]
+                        authenticate_url = check_url["url"]
 
-                except stripe.error.InvalidRequestError as e:
-                    return response.Response(
-                        {"msg": e.user_message},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                except stripe.error.StripeError as e:
-                    return response.Response(
-                        {"msg": e.user_message},
-                        status=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    )
-                except Exception as e:
-                    return response.Response(
-                        {"msg": e},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                return HttpResponse(f"{authenticate_url}")
+                    except stripe.error.InvalidRequestError as e:
+                        return response.Response(
+                            {"msg": e.user_message},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    except stripe.error.StripeError as e:
+                        return response.Response(
+                            {"msg": e.user_message},
+                            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                        )
+                    except Exception as e:
+                        return response.Response(
+                            {"msg": e},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    return HttpResponse(f"{authenticate_url}")
+                else:
+                    return JsonResponse({'message': "Checkout is empty"}, status=404)
             else:
                 return JsonResponse({'message': "Customer Id does not exists"}, status=404)
         else:
