@@ -38,11 +38,12 @@ from odata.views.pg_stripe import (
     StipeCheckoutSession,
     StripeCard,
     StripSofort,
+    SofortGet,
     # StripeWebHookView,
     success,
 
 )
-from odata.views.paypal import Paypal
+from odata.views.paypal import Paypal, PaypalGet
 
 # from odata.views.reset_password import PasswordTokenCheck
 
@@ -132,11 +133,13 @@ urlpatterns = [
                   path("", include(router.urls)),
                   path("stripe/", StripeCard.as_view()),
                   path("stripe/sofort/", StripSofort.as_view()),
+                  path("stripe/sofort_get/", SofortGet.as_view()),
                   path("stripe/check-out", StipeCheckoutSession.as_view()),
                   path("stripe/create-checkout", CreateCheckoutSession.as_view()),
                   # path("stripe/webhook", StripeWebHookView.as_view()),
                   path("stripe/success", success),
                   path("paypal/payment/", Paypal.as_view()),
+                  path("paypal/payment_get/", PaypalGet.as_view()),
                   path("request_reset_email/", UserForgotPassword.as_view(), name="request_reset_email"),
                   path("<uidb64>/<token>/", VerifyUserForgotPassword.as_view(),
                        name='password_reset_confirm'),

@@ -196,8 +196,7 @@ class StripeCard(APIView):
             return JsonResponse({'message': "Please give Customer Id"}, status=404)
 
 
-class StripSofort(APIView):
-    permission_classes = [IsAuthenticated]
+class SofortGet(APIView):
     def get(self, request):
         payment_id = request.GET["payment_intent"]
         customer_id = request.GET['customer_id']
@@ -219,10 +218,11 @@ class StripSofort(APIView):
         order_count = str(Order.objects.count())
 
         customer = Customer.objects.get(_id=customer_objectID)
-        checkout=customer.checkout
+        checkout = customer.checkout
         if customer:
-            if customer:
-                payment = Payment(invoice=f"AGASOWN_{date}_{invoice_count}", payment_type=payment_type, customer=customer,
+            if checkout:
+                payment = Payment(invoice=f"AGASOWN_{date}_{invoice_count}", payment_type=payment_type,
+                                  customer=customer,
                                   status=payment_status, date_of_payment=date_of_payment, amount=amount)
                 payment.save()
                 order = Order(customer=customer, order_number=order_count, order_date=date, paid=True,
@@ -240,6 +240,10 @@ class StripSofort(APIView):
                 return JsonResponse({'message': "Checkout is empty"}, status=404)
         else:
             return JsonResponse({'message': "Customer does not exists"}, status=404)
+
+
+class StripSofort(APIView):
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
         user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
@@ -301,7 +305,7 @@ class StripSofort(APIView):
                     confirm_payment = stripe.PaymentIntent.confirm(
                         payment_intent["id"],
                         payment_method=payment_intent["payment_method"],
-                        return_url=f"http://64.227.115.243:8080/stripe/sofort/?customer_id={customer_id}",
+                        return_url=f"http://64.227.115.243:8080/stripe/sofort_get/?customer_id={customer_id}",
                         receipt_email=email,
                     )
                     url = confirm_payment["next_action"]
