@@ -69,6 +69,17 @@ class NewsLetterSerializers(serializers.ModelSerializer):
         model = NewsletterSubscription
         fields = "__all__"
 
+    def validate(self, validated_data):
+        if 'email' in validated_data:
+            email = validated_data["email"]
+            if NewsletterSubscription.objects.filter(email=email):
+                raise serializers.ValidationError(
+                    {"email": "Email is already registered with us"}
+                )
+            return validated_data
+        else:
+            return validated_data
+
 
 class CustomerSerializers(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(
