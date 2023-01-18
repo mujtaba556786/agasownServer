@@ -255,29 +255,11 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
 
     def __str__(self):
-        return self.order_number
+        customer = Customer.objects.get(_id=self.customer_id)
+        if customer.first_name is None or customer.last_name is None:
+            return ""
+        return customer.first_name + ' ' + customer.last_name
 
-
-# class OrderDetail(models.Model):
-#     _id = models.ObjectIdField(primary_key=True)
-#     order = models.ForeignKey(Order, on_delete=models.DO_NOTHING)
-#     product = models.ForeignKey(Product, on_delete=models.DO_NOTHING, null=False, blank=False)
-#     order_number = models.CharField(max_length=100,null=True,blank=True)
-#     payment_id = models.CharField(max_length=50,null=True,blank=True)
-#     price = models.DecimalField(max_digits=19, decimal_places=2)
-#     quatity = models.IntegerField()
-#     discount = models.DecimalField(decimal_places=2, max_digits=10)
-#     total = models.IntegerField()
-#     idsku = models.CharField(max_length=100,null=True,blank=True)
-#     size = models.CharField(max_length=3,choices=Available_Size)
-#     color = models.CharField(max_length=3,choices=Available_Color)
-#     fullfield = models.BooleanField(default=False)
-#     bill_date = models.DateField(default='')    
-#     created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
-#     updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
-
-#     def __str__(self):
-#         return self.order.order_number
 
 class NewsletterSubscription(models.Model):
     _id = models.ObjectIdField(primary_key=True)
@@ -288,3 +270,9 @@ class NewsletterSubscription(models.Model):
     data_acceptance = models.BooleanField()
     created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
+
+    def __str__(self):
+        if self.email is not None:
+            return self.email
+        else:
+            return ''

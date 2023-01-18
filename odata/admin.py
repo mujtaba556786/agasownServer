@@ -301,12 +301,27 @@ class PaymentAdmin(admin.ModelAdmin):
     make_deleted.short_description = 'Delete selected payment'
 
 
+@admin.register(Order)
+class OrderDetails(admin.ModelAdmin):
+    icon_name = 'Order'
+    actions = ['make_deleted']
+
+    def make_deleted(modeladmin, request, queryset):
+        obj_ids = [ObjectId(i) for i in request.POST.getlist('_selected_action')]
+        for i in obj_ids:
+            query = Order.objects.get(pk=i)
+            query.delete()
+
+    make_deleted.short_description = 'Delete selected order'
+
+
 @admin.register(UserForgotPassword)
 class UserForgotPasswordAdmin(admin.ModelAdmin):
     icon_name = 'password'
 # UnRegister your model.
 # admin.site.unregister(User)
 # admin.site.unregister(Group)
+
 
 # @admin.register(ProductImage)
 # class ProductImageAdmin(admin.ModelAdmin):
