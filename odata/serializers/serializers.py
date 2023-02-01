@@ -143,7 +143,7 @@ class CustomerSerializers(serializers.ModelSerializer):
         return Customer.objects.get(user=user)
 
     def validate(self, validated_data):
-        if 'username' in validated_data or 'email' in validated_data:
+        if 'email' in validated_data or 'username' in validated_data:
             username = validated_data["username"]
             email = validated_data["email"]
             if User.objects.filter(email=email):
