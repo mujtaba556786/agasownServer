@@ -146,13 +146,13 @@ class CustomerSerializers(serializers.ModelSerializer):
         if 'username' in validated_data or 'email' in validated_data:
             username = validated_data["username"]
             email = validated_data["email"]
-            if User.objects.filter(username=username):
-                if User.objects.filter(email=email):
+            if User.objects.filter(email=email):
+                if User.objects.filter(username=username):
                     raise serializers.ValidationError(
-                        {"email": "Email is already registered with us"}
+                        {"username": "Username is already registered with us"}
                     )
                 raise serializers.ValidationError(
-                    {"username": "Username is already registered with us"}
+                    {"email": "Email is already registered with us"}
                 )
             return validated_data
         else:
