@@ -220,6 +220,8 @@ class CustomerRegistrationSerializer(serializers.ModelSerializer):
                 user=instance,
                 first_name=validated_data["first_name"],
                 last_name=validated_data["last_name"],
+                voucher="welcome10",
+                voucher_value=True,
             )
 
         return instance
