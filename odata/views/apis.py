@@ -149,6 +149,42 @@ class PaymentViewset(viewsets.ModelViewSet):
         return Payment.objects.get(_id=ObjectId(self.kwargs.get('pk')))
 
 
+class OrderCustomer(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
+        customer_id = (Customer.objects.get(user_id=user_id))._id
+        if customer_id:
+            if Customer.objects.filter(_id=customer_id):
+                orders = Order.objects.filter(customer_id=customer_id)
+                order_details = []
+                for order in orders:
+                    order_dict = model_to_dict(order)
+                    order_dict['_id'] = str(order_dict['_id'])
+                    order_dict['customer'] = str(order_dict['customer'])
+                    order_dict['payment'] = str(order_dict['payment'])
+                    order_details.append(order_dict)
+                return JsonResponse({'order_details': order_details}, status=200)
+            else:
+                return JsonResponse({'message': "Customer Id does not exists"}, status=404)
+        else:
+            return JsonResponse({'message': "Please give Customer Id"}, status=404)
+
+
+class OrderViewset(generics.GenericAPIView):
+    def get(self, request):
+        orders = Order.objects.all()
+        order_details = []
+        for order in orders:
+            order_dict = model_to_dict(order)
+            order_dict['_id'] = str(order_dict['_id'])
+            order_dict['customer'] = str(order_dict['customer'])
+            order_dict['payment'] = str(order_dict['payment'])
+            order_details.append(order_dict)
+        return JsonResponse({'order_details': order_details}, status=200)
+
+
 class Wishlist(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
@@ -201,6 +237,9 @@ class DeleteWishlist(generics.GenericAPIView):
                             customer_wishlist.remove(product_id)
                             customer.wishlist = ",".join(customer_wishlist)
                             customer.save()
+                            if customer.wishlist == "":
+                                customer.wishlist = None
+                                customer.save()
                             return JsonResponse({"message": "Deleted Successfully"},
                                                 status=200)
                         else:
@@ -243,42 +282,6 @@ class ProductVariants(generics.GenericAPIView):
 
         return JsonResponse({"message": "Product Variant added successfully"},
                             status=200)
-
-
-class OrderCustomer(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        user_id = (request.__dict__.get('_auth')).__dict__.get('user_id')
-        customer_id = (Customer.objects.get(user_id=user_id))._id
-        if customer_id:
-            if Customer.objects.filter(_id=customer_id):
-                orders = Order.objects.filter(customer_id=customer_id)
-                order_details = []
-                for order in orders:
-                    order_dict = model_to_dict(order)
-                    order_dict['_id'] = str(order_dict['_id'])
-                    order_dict['customer'] = str(order_dict['customer'])
-                    order_dict['payment'] = str(order_dict['payment'])
-                    order_details.append(order_dict)
-                return JsonResponse({'order_details': order_details}, status=200)
-            else:
-                return JsonResponse({'message': "Customer Id does not exists"}, status=404)
-        else:
-            return JsonResponse({'message': "Please give Customer Id"}, status=404)
-
-
-class OrderViewset(generics.GenericAPIView):
-    def get(self, request):
-        orders = Order.objects.all()
-        order_details = []
-        for order in orders:
-            order_dict = model_to_dict(order)
-            order_dict['_id'] = str(order_dict['_id'])
-            order_dict['customer'] = str(order_dict['customer'])
-            order_dict['payment'] = str(order_dict['payment'])
-            order_details.append(order_dict)
-        return JsonResponse({'order_details': order_details}, status=200)
 
 
 class Checkout(generics.GenericAPIView):
@@ -334,6 +337,9 @@ class DeleteCheckout(generics.GenericAPIView):
                             customer_checkout.remove(product_id)
                             customer.checkout = ",".join(customer_checkout)
                             customer.save()
+                            if customer.checkout == "":
+                                customer.checkout = None
+                                customer.save()
                         else:
                             return JsonResponse({"message": "Product_id doesn't exists in checkout_session"},
                                                 status=400)
@@ -440,7 +446,7 @@ class GuestLogin(generics.GenericAPIView):
 
         if user_email:
             user = User.objects.get(email=user_email[0])
-            customer_id=user.id
+            customer_id = user.id
             email = User.objects.filter(email=email)[0]
             token = get_access_token(email)
             return JsonResponse({"message": "Email_Id already exists", "token": token, "customer_id": customer_id},
