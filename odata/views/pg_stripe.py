@@ -138,6 +138,18 @@ class StripeCard(APIView):
                         checkout = customer.checkout
 
                         if checkout:
+                            customer_checkout = customer.checkout.split(",")
+                            customer_checkout_qtn = customer.checkout_quantity.split(",")
+                            for i, product_id in enumerate(customer_checkout):
+                                product = Product.objects.get(_id=ObjectId(product_id))
+                                product.quantity = product.quantity - int(customer_checkout_qtn[i])
+                                product.save()
+                            product_details = {}
+                            for prd in customer_checkout:
+                                for qty in customer_checkout_qtn:
+                                    product_details[prd] = int(qty)
+                                    customer_checkout_qtn.remove(qty)
+                                    break
 
                             payment = Payment(invoice=f"AGASOWN_{date}_{invoice_count}", customer=customer,
                                               payment_type=payment_method_type, status=payment_status,
@@ -145,15 +157,18 @@ class StripeCard(APIView):
                             payment.save()
 
                             order = Order(customer=customer, order_number=order_count, order_date=date, paid=True,
-                                          payment=payment, product_id=checkout)
+                                          payment=payment, product_id=product_details)
                             order.save()
-                            customer.checkout = None
-                            customer.save()
                             send_mail_card(
                                 customer_email=email, retrieve_url=receipt_url, name=name,
                                 payment_method_type=payment_method_type, card_brand=card_brand, last_digits=last_digits,
                                 card_type=card_type
                             )
+                            customer.checkout = ""
+                            customer.checkout_quantity = ""
+                            customer.voucher = "Expired"
+                            customer.voucher_value = False
+                            customer.save()
                         else:
                             return JsonResponse({'message': "Checkout is empty"}, status=404)
                     except stripe.error.CardError as e:
@@ -221,18 +236,34 @@ class SofortGet(APIView):
         checkout = customer.checkout
         if customer:
             if checkout:
+                customer_checkout = customer.checkout.split(",")
+                customer_checkout_qtn = customer.checkout_quantity.split(",")
+                for i, product_id in enumerate(customer_checkout):
+                    product = Product.objects.get(_id=ObjectId(product_id))
+                    product.quantity = product.quantity - int(customer_checkout_qtn[i])
+                    product.save()
+                product_details = {}
+                for prd in customer_checkout:
+                    for qty in customer_checkout_qtn:
+                        product_details[prd] = int(qty)
+                        customer_checkout_qtn.remove(qty)
+                        break
+
                 payment = Payment(invoice=f"AGASOWN_{date}_{invoice_count}", payment_type=payment_type,
                                   customer=customer,
                                   status=payment_status, date_of_payment=date_of_payment, amount=amount)
                 payment.save()
                 order = Order(customer=customer, order_number=order_count, order_date=date, paid=True,
-                              payment=payment, product_id=checkout)
+                              payment=payment, product_id=product_details)
                 order.save()
-                customer.checkout = None
-                customer.save()
                 send_mail_sofort(customer_email=customer_email, customer_name=customer_name,
                                  bank_name=bank_name, bank_code=bank_code, payment_type=payment_type,
                                  last_digits=last_digits)
+                customer.checkout = ""
+                customer.checkout_quantity = ""
+                customer.voucher = "Expired"
+                customer.voucher_value = False
+                customer.save()
 
                 return redirect("http://64.227.115.243/index.html#/payment",
                                 status=200)
