@@ -71,8 +71,6 @@ class PaypalGet(APIView):
 
                     customer.checkout = ""
                     customer.checkout_quantity = ""
-                    customer.voucher = "Expired"
-                    customer.voucher_value = False
                     customer.save()
 
                     return redirect("http://64.227.115.243/index.html#/payment",
