@@ -351,11 +351,16 @@ class DeleteCheckout(generics.GenericAPIView):
                             customer_checkout_qtn = customer.checkout_quantity.split(',')
                             for i, p_id in enumerate(customer_checkout):
                                 if p_id == product_id:
-                                    customer_checkout.remove(p_id)
-                                    customer.checkout = ",".join(customer_checkout)
-                                    customer_checkout_qtn.remove(customer_checkout_qtn[i])
-                                    customer.checkout_quantity = ",".join(customer_checkout_qtn)
+                                    customer_checkout_qtn[i] = str(int(customer_checkout_qtn[i]) - 1)
+                                    customer_checkout_quantity = ",".join(customer_checkout_qtn)
+                                    customer.checkout_quantity = customer_checkout_quantity
                                     customer.save()
+                                    if p_id == product_id and customer_checkout_qtn[i] == "0":
+                                        customer_checkout.remove(p_id)
+                                        customer.checkout = ",".join(customer_checkout)
+                                        customer_checkout_qtn.remove(customer_checkout_qtn[i])
+                                        customer.checkout_quantity = ",".join(customer_checkout_qtn)
+                                        customer.save()
                         else:
                             return JsonResponse({"message": "Product_id doesn't exists in checkout_session"},
                                                 status=400)
@@ -423,6 +428,9 @@ class TotalAmount(generics.GenericAPIView):
                             price = product_price - (product_price * (product_discount / 100))
                             amount += price * int(customer_checkout_qtn[i])
                         total_amount = ("{:.2f}".format(amount - (amount * (vouch / 100))))
+                        customer.voucher = "Expired"
+                        customer.voucher_value = False
+                        customer.save()
                         return JsonResponse({"Total Amount": total_amount}, status=200)
                     else:
                         return JsonResponse({"message": "Voucher doesn't match"}, status=404)
