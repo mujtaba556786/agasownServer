@@ -292,22 +292,36 @@ class Checkout(generics.GenericAPIView):
         customer_id = (Customer.objects.get(user_id=user_id))._id
         if customer_id:
             data = request.data
-            product_id = data.get("product_id", None)
+            product = data.get("product", {})
             if Customer.objects.filter(_id=customer_id):
                 customer = Customer.objects.get(_id=customer_id)
-                if Product.objects.filter(_id=ObjectId(product_id)):
-                    customer_checkout = str(customer.checkout).split(",")
-                    if product_id in customer_checkout:
-                        return JsonResponse({"message": "Product already exists"},
-                                            status=400)
+                for product_id, qty in product.items():
+                    if Product.objects.filter(_id=ObjectId(product_id)):
+                        prd = Product.objects.get(_id=ObjectId(product_id))
+                        product_quantity = prd.quantity
+                        if qty > product_quantity:
+                            return JsonResponse({"message": f"Quantity for Product {product_id} is not available"},
+                                                status=400)
+                        else:
+                            customer_checkout = customer.checkout.split(",")
+                            if product_id in customer_checkout:
+                                customer_checkout_qtn = customer.checkout_quantity.split(",")
+                                for i, p_id in enumerate(customer_checkout):
+                                    if p_id == product_id:
+                                        customer_checkout_qtn[i] = str(int(customer_checkout_qtn[i]) + qty)
+                                customer_checkout_quantity = ",".join(customer_checkout_qtn)
+                                customer.checkout_quantity = customer_checkout_quantity
+                                customer.save()
+                            else:
+                                checkout = customer.checkout
+                                checkout = f"{checkout},{product_id}" if checkout else f"{product_id}"
+                                customer.checkout = checkout
+                                checkout_qtn = customer.checkout_quantity
+                                customer.checkout_quantity = f"{checkout_qtn},{qty}" if checkout_qtn else f"{qty}"
+                                customer.save()
                     else:
-                        checkout = customer.checkout
-                        checkout = f"{checkout},{product_id}" if checkout else f"{product_id}"
-                        customer.checkout = checkout
-                        customer.save()
-                else:
-                    return JsonResponse({"message": "Product doesn't exists"},
-                                        status=400)
+                        return JsonResponse({"message": "Product doesn't exists"},
+                                            status=400)
             else:
                 return JsonResponse({"message": "Customer doesn't exists"},
                                     status=400)
@@ -334,12 +348,14 @@ class DeleteCheckout(generics.GenericAPIView):
                     if customer.checkout:
                         customer_checkout = customer.checkout.split(',')
                         if product_id in customer_checkout:
-                            customer_checkout.remove(product_id)
-                            customer.checkout = ",".join(customer_checkout)
-                            customer.save()
-                            if customer.checkout == "":
-                                customer.checkout = None
-                                customer.save()
+                            customer_checkout_qtn = customer.checkout_quantity.split(',')
+                            for i, p_id in enumerate(customer_checkout):
+                                if p_id == product_id:
+                                    customer_checkout.remove(p_id)
+                                    customer.checkout = ",".join(customer_checkout)
+                                    customer_checkout_qtn.remove(customer_checkout_qtn[i])
+                                    customer.checkout_quantity = ",".join(customer_checkout_qtn)
+                                    customer.save()
                         else:
                             return JsonResponse({"message": "Product_id doesn't exists in checkout_session"},
                                                 status=400)
@@ -367,68 +383,58 @@ class TotalAmount(generics.GenericAPIView):
         if customer_id:
             if Customer.objects.filter(_id=customer_id):
                 data = request.data
-                quantity = data.get("quantity", {})
                 voucher = data.get("voucher", None)
                 discount = data.get("discount", None)
                 customer = Customer.objects.get(_id=ObjectId(customer_id))
-                customer_checkout = str(customer.checkout).split(",")
+                customer_checkout = customer.checkout.split(",")
+                customer_checkout_qtn = customer.checkout_quantity.split(",")
                 total_amount = 0
                 amount = 0
                 num = None
-                validate_product = []
-                for product_id, qty in quantity.items():
-                    validate_product.append(product_id)
+                if voucher == "" or discount:
+                    for i in range(len(discount)):
+                        if discount[i].isdigit():
+                            num = discount[i:]
+                            break
+                    disc = int(num)
+                    for i, product_id in enumerate(customer_checkout):
+                        product = Product.objects.get(_id=ObjectId(product_id))
+                        product_price = product.price
+                        product_discount = int(float(product.discount))
+                        price = product_price - (product_price * (product_discount / 100))
+                        amount += price * int(customer_checkout_qtn[i])
+                    total_amount = ("{:.2f}".format(amount - (amount * (disc / 100))))
+                    customer.discount = "Expired"
+                    customer.discount_value = False
+                    customer.save()
+                    return JsonResponse({"Total Amount": total_amount}, status=200)
 
-                if validate_product.sort() != customer_checkout.sort():
-                    return JsonResponse({"Product doesn't match"}, status=404)
-
-                else:
-                    if voucher == "" or discount:
-                        for i in range(len(discount)):
-                            if discount[i].isdigit():
-                                num = discount[i:]
-                                break
-                        disc = int(num)
-                        for product_id, qty in quantity.items():
-                            product = Product.objects.get(_id=ObjectId(product_id))
-                            product_price = product.price
-                            product_discount = int(float(product.discount))
-                            price = product_price - (product_price * (product_discount / 100))
-                            amount += price * int(qty)
-                        total_amount = ("{:.2f}".format(amount - (amount * (disc / 100))))
-                        customer.discount = "You have already used"
-                        customer.discount_value = False
-                        customer.save()
-                        return JsonResponse({"Total Amount": total_amount}, status=200)
-
-                    elif discount == "" or voucher:
+                elif discount == "" or voucher:
+                    if voucher == customer.voucher:
                         for i in range(len(voucher)):
                             if voucher[i].isdigit():
                                 num = voucher[i:]
                                 break
                         vouch = int(num)
-                        for product_id, qty in quantity.items():
+                        for i, product_id in enumerate(customer_checkout):
                             product = Product.objects.get(_id=ObjectId(product_id))
                             product_price = product.price
                             product_discount = int(float(product.discount))
                             price = product_price - (product_price * (product_discount / 100))
-                            amount += price * int(qty)
+                            amount += price * int(customer_checkout_qtn[i])
                         total_amount = ("{:.2f}".format(amount - (amount * (vouch / 100))))
-                        customer.voucher = "You have already used"
-                        customer.voucher_value = False
-                        customer.save()
-
                         return JsonResponse({"Total Amount": total_amount}, status=200)
-
                     else:
-                        for product_id, qty in quantity.items():
-                            product = Product.objects.get(_id=ObjectId(product_id))
-                            product_price = product.price
-                            product_discount = int(float(product.discount))
-                            price = product_price - (product_price * (product_discount / 100))
-                            amount += price * int(qty)
-                        total_amount = ("{:.2f}".format(amount))
-                    return JsonResponse({"Total Amount": total_amount}, status=200)
+                        return JsonResponse({"message": "Voucher doesn't match"}, status=404)
+                else:
+                    for i, product_id in enumerate(customer_checkout):
+                        product = Product.objects.get(_id=ObjectId(product_id))
+                        product_price = product.price
+                        product_discount = int(float(product.discount))
+                        price = product_price - (product_price * (product_discount / 100))
+                        amount += price * int(customer_checkout_qtn[i])
+                    total_amount = ("{:.2f}".format(amount))
+                return JsonResponse({"Total Amount": total_amount}, status=200)
             else:
                 return JsonResponse({'message': "Customer Id does not exists"}, status=404)
         else:

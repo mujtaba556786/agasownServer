@@ -10,7 +10,6 @@ from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.shortcuts import reverse
 from djongo import models
-
 # 18.216.224.202u
 
 Available_Size = (
@@ -70,6 +69,7 @@ class Customer(models.Model):
     salutation = models.CharField(max_length=100, null=True, blank=True)
     first_name = models.CharField(max_length=100, null=True, blank=True)
     last_name = models.CharField(max_length=100, null=True, blank=True)
+    dob = models.DateField(max_length=10, null=True, blank=True)
     address1 = models.CharField(max_length=100, null=True, blank=True)
     address2 = models.CharField(max_length=100, null=True, blank=True)
     city = models.CharField(max_length=100, null=True, blank=True)
@@ -99,6 +99,7 @@ class Customer(models.Model):
     discount_value = models.BooleanField(default=False, null=True)
     wishlist = models.TextField(null=True)
     checkout = models.TextField(null=True)
+    checkout_quantity = models.TextField(null=True)
     medium = models.CharField(max_length=100, null=True, blank=True)
     gcustid = models.CharField(max_length=512, null=True, blank=True)
     gclid = models.CharField(max_length=1024, null=True, blank=True)
@@ -248,7 +249,7 @@ class Order(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     order_number = models.CharField(max_length=100, null=True, blank=True)
     payment = models.ForeignKey(Payment, on_delete=models.CASCADE)
-    product_id = models.TextField(null=True)
+    product_details = models.TextField(null=True)
     order_date = models.DateTimeField(auto_now_add=True)
     paid = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now=False, auto_now_add=True)
