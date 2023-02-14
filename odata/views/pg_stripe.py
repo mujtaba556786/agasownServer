@@ -157,7 +157,7 @@ class StripeCard(APIView):
                             payment.save()
 
                             order = Order(customer=customer, order_number=order_count, order_date=date, paid=True,
-                                          payment=payment, product_id=product_details)
+                                          payment=payment, product_details=product_details)
                             order.save()
                             send_mail_card(
                                 customer_email=email, retrieve_url=receipt_url, name=name,
@@ -252,7 +252,7 @@ class SofortGet(APIView):
                                   status=payment_status, date_of_payment=date_of_payment, amount=amount)
                 payment.save()
                 order = Order(customer=customer, order_number=order_count, order_date=date, paid=True,
-                              payment=payment, product_id=product_details)
+                              payment=payment, product_details=product_details)
                 order.save()
                 send_mail_sofort(customer_email=customer_email, customer_name=customer_name,
                                  bank_name=bank_name, bank_code=bank_code, payment_type=payment_type,
