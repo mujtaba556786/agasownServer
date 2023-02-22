@@ -264,7 +264,7 @@ class Order(models.Model):
 
 class NewsletterSubscription(models.Model):
     _id = models.ObjectIdField(primary_key=True)
-    salutation = models.CharField(max_length=3)
+    salutation = models.CharField(max_length=4)
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.CharField(max_length=100)
