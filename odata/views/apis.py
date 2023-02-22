@@ -456,34 +456,41 @@ class GuestLogin(generics.GenericAPIView):
         last_name = data.get("last_name", None)
         email = data.get("email", None)
 
-        user_email = User.objects.filter(email=email)
-
-        if user_email:
-            user = User.objects.get(email=user_email[0])
-            customer_id = user.id
-            email = User.objects.filter(email=email)[0]
-            token = get_access_token(email)
-            return JsonResponse({"message": "Email_Id already exists", "token": token, "customer_id": customer_id},
+        if not first_name or not last_name or not email:
+            return JsonResponse({"message": "Please provide full details"}, status=500)
+        if first_name == "" or last_name == "" or email == "":
+            return JsonResponse({"message": "Please enter correct details"},
                                 status=200)
         else:
-            try:
-                username = email
-                user = User.objects.create(
-                    first_name=first_name,
-                    last_name=last_name,
-                    email=email,
-                    username=username,
-                )
-                token = get_access_token(user)
-                customer = Customer.objects.create(user=user, first_name=first_name, last_name=last_name, email=email,
-                                                   guest_login=True)
-                customer.save()
-                customer_id = str(customer.user_id)
+            user_email = User.objects.filter(email=email)
 
-                return JsonResponse({"message": "Successfully Logged In", "token": token, "customer": customer_id},
+            if user_email:
+                user = User.objects.get(email=user_email[0])
+                customer_id = user.id
+                email = User.objects.filter(email=email)[0]
+                token = get_access_token(email)
+                return JsonResponse({"message": "Email_Id already exists", "token": token, "customer_id": customer_id},
                                     status=200)
-            except Exception as e:
-                return JsonResponse({"message": str(e)}, status=500)
+            else:
+                try:
+                    username = email
+                    user = User.objects.create(
+                        first_name=first_name,
+                        last_name=last_name,
+                        email=email,
+                        username=username,
+                    )
+                    token = get_access_token(user)
+                    customer = Customer.objects.create(user=user, first_name=first_name, last_name=last_name,
+                                                       email=email,
+                                                       guest_login=True)
+                    customer.save()
+                    customer_id = str(customer.user_id)
+
+                    return JsonResponse({"message": "Successfully Logged In", "token": token, "customer": customer_id},
+                                        status=200)
+                except Exception as e:
+                    return JsonResponse({"message": str(e)}, status=500)
 
 
 def google_login(request):
