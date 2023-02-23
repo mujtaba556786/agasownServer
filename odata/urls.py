@@ -112,6 +112,7 @@ router.register(r"category", CategoryViewSet),
 router.register(r"login", LoginViewSet, basename="login")
 router.register(r"logout", LogoutViewSet, basename="logout")
 router.register(r"sign-up", SignupViewSet, basename="sign-up")
+router.register(r"order", OrderViewset)
 
 # router.register(
 #     r"forgot-password", UserForgotPasswordViewSet, basename="request-reset-email"
@@ -153,7 +154,6 @@ urlpatterns = [
                   path('guest_login/', GuestLogin.as_view(), name="guest_login"),
                   path('total_amount/', TotalAmount.as_view()),
                   path('guest_password/', UserUpdatePassword.as_view()),
-                  path('order/', OrderViewset.as_view()),
                   path('order_customer/', OrderCustomer.as_view())
 
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -11,6 +11,7 @@ from django.dispatch import receiver
 from django.shortcuts import reverse
 from djongo import models
 # 18.216.224.202u
+from bson import ObjectId
 
 Available_Size = (
     ('S', 'small'),
@@ -238,10 +239,7 @@ class Payment(models.Model):
     updated_at = models.DateTimeField(auto_now=True, auto_now_add=False)
 
     def __str__(self):
-        customer = Customer.objects.get(_id=self.customer_id)
-        if customer.first_name is None or customer.last_name is None:
-            return ""
-        return customer.first_name + ' ' + customer.last_name
+        return self.invoice or ''
 
 
 class Order(models.Model):

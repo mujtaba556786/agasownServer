@@ -9,6 +9,7 @@ from odata.models import (
     ProductVariant,
     NewsletterSubscription,
     Payment,
+    Order
 )
 
 
@@ -192,4 +193,23 @@ class PaymentSerializers(serializers.ModelSerializer):
     def to_representation(self, instance):
         rep = super(PaymentSerializers, self).to_representation(instance)
         rep["customer"] = str(rep["customer"])
+        return rep
+
+
+class OrderSerializers(serializers.ModelSerializer):
+    """
+    Order serializer
+    """
+
+    class Meta:
+        """Order meta class"""
+
+        model = Order
+        fields = "__all__"
+
+    def to_representation(self, instance):
+        rep = super(OrderSerializers, self).to_representation(instance)
+        rep["customer"] = str(rep["customer"])
+        rep['_id'] = str(rep['_id'])
+        rep['payment'] = str(rep['payment'])
         return rep

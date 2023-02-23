@@ -31,6 +31,7 @@ from odata.serializers.serializers import (
     ProductImageSerializers,
     ProductVariantSerializers,
     NewsLetterSerializers,
+    OrderSerializers
 )
 
 
@@ -141,12 +142,25 @@ class PaymentViewset(viewsets.ModelViewSet):
     This viewset is used for crud operation
     """
 
-    queryset = Payment.objects.none()
+    queryset = Payment.objects.all()
     serializer_class = PaymentSerializers
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return Payment.objects.get(_id=ObjectId(self.kwargs.get('pk')))
+
+
+class OrderViewset(viewsets.ModelViewSet):
+    """
+    This viewset is used for crud operation
+    """
+
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializers
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return Order.objects.get(_id=ObjectId(self.kwargs.get('pk')))
 
 
 class OrderCustomer(generics.GenericAPIView):
@@ -170,19 +184,6 @@ class OrderCustomer(generics.GenericAPIView):
                 return JsonResponse({'message': "Customer Id does not exists"}, status=404)
         else:
             return JsonResponse({'message': "Please give Customer Id"}, status=404)
-
-
-class OrderViewset(generics.GenericAPIView):
-    def get(self, request):
-        orders = Order.objects.all()
-        order_details = []
-        for order in orders:
-            order_dict = model_to_dict(order)
-            order_dict['_id'] = str(order_dict['_id'])
-            order_dict['customer'] = str(order_dict['customer'])
-            order_dict['payment'] = str(order_dict['payment'])
-            order_details.append(order_dict)
-        return JsonResponse({'order_details': order_details}, status=200)
 
 
 class Wishlist(generics.GenericAPIView):
